@@ -45,4 +45,3 @@ npm audit
 ## 开源基础
 
 BlockNote 0.56.0 社区核心（MPL-2.0），React、Vite、Mantine、Lucide。未使用 BlockNote XL 或 Docmost 企业组件，未修改 BlockNote 源码。许可与研究记录见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [选型审查](docs/open-source-review.md)。本项目自身暂未指定开放源代码许可，公开仓库不等于自动授予再分发许可。
-

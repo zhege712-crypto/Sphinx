@@ -1,0 +1,4 @@
+# Worker secrets only. Never add these values to VITE_* or GitHub source files.
+GITHUB_CLIENT_ID=replace_with_new_oauth_app_client_id
+GITHUB_CLIENT_SECRET=replace_with_new_oauth_app_secret
+GITHUB_PUBLISH_TOKEN=replace_with_fine_grained_token_for_only_howtoagent

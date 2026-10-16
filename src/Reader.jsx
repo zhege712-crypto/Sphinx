@@ -1,0 +1,47 @@
+import React from 'react';
+import { safeLink } from '../shared/document.mjs';
+export const inlineText = (value) => typeof value === 'string' ? value : Array.isArray(value) ? value.map(inlineText).join('') : value?.text || inlineText(value?.content || []);
+export function headings(blocks) { return (blocks || []).flatMap((b) => [...(b.type === 'heading' ? [{ id: b.id, text: inlineText(b.content), level: b.props?.level || 2 }] : []), ...headings(b.children)]); }
+function Inline({ value }) {
+  if (typeof value === 'string') return value;
+  return (value || []).map((part, i) => {
+    if (part.type === 'link') { let href; try { href = safeLink(part.href); } catch { href = undefined; } return <a key={i} href={href} rel="noopener noreferrer"><Inline value={part.content} /></a>; }
+    let text = part.text || '';
+    if (part.styles?.code) text = <code>{text}</code>;
+    if (part.styles?.bold) text = <strong>{text}</strong>;
+    if (part.styles?.italic) text = <em>{text}</em>;
+    if (part.styles?.underline) text = <u>{text}</u>;
+    if (part.styles?.strike) text = <s>{text}</s>;
+    const color = { gray: '#626975', brown: '#795640', red: '#c33439', orange: '#a24e0b', yellow: '#876500', green: '#237442', blue: '#245bdb', purple: '#7941a4', pink: '#ac3572' };
+    return <span key={i} style={{ color: color[part.styles?.textColor], background: part.styles?.backgroundColor && part.styles.backgroundColor !== 'default' ? `${color[part.styles.backgroundColor]}18` : undefined }}>{text}</span>;
+  });
+}
+export function Reader({ blocks, privatePreview = false }) {
+  return <div className="reader-body">{(blocks || []).map((b, index) => {
+    const content = <Inline value={b.content} />;
+    const nested = b.children?.length ? <Reader blocks={b.children} privatePreview={privatePreview} /> : null;
+    const key = b.id || index;
+    const props = { id: `block-${b.id}`, style: { textAlign: b.props?.textAlignment } };
+    if (b.type === 'heading') { const H = `h${Math.min(3, Math.max(1, b.props?.level || 2))}`; return <React.Fragment key={key}><H {...props}>{content}</H>{nested}</React.Fragment>; }
+    if (b.type === 'table') return <div key={key} {...props} className="table-scroll"><table><tbody>{b.content.rows.map((row, r) => <tr key={r}>{row.cells.map((cell, c) => { const Cell = r === 0 && b.content.headerRows === 1 ? 'th' : 'td'; return <Cell key={c} colSpan={cell.props?.colspan} rowSpan={cell.props?.rowspan}><Inline value={typeof cell === 'string' || Array.isArray(cell) ? cell : cell.content} /></Cell>; })}</tr>)}</tbody></table>{nested}</div>;
+    if (b.type === 'codeBlock') return <pre key={key} {...props}><code>{inlineText(b.content)}</code></pre>;
+    if (b.type === 'divider') return <hr key={key} {...props} />;
+    if (b.type === 'image') {
+      const url = b.props?.url || '';
+      const safe = privatePreview ? /^\/api\/assets\/[a-f0-9-]{36}$/.test(url) : /^assets\/[a-f0-9-]{36}\.(png|jpg|gif|webp)$/.test(url);
+      return safe ? <figure key={key} {...props}><img src={url} alt={b.props.caption || b.props.name || '文章配图'} style={{ maxWidth: b.props.previewWidth || '100%' }} loading="lazy" /><figcaption>{b.props.caption}</figcaption></figure> : null;
+    }
+    if (b.type === 'quote') return <blockquote key={key} {...props}>{content}{nested}</blockquote>;
+    if (b.type === 'toggleListItem') return <details key={key} {...props}><summary>{content}</summary>{nested}</details>;
+    if (b.type === 'bulletListItem' || b.type === 'numberedListItem') { const List = b.type === 'bulletListItem' ? 'ul' : 'ol'; return <List key={key} {...props} start={b.props?.start}><li>{content}{nested}</li></List>; }
+    if (b.type === 'checkListItem') return <div key={key} {...props} className="read-check"><input type="checkbox" checked={!!b.props?.checked} readOnly aria-label={inlineText(b.content)} /><span>{content}{nested}</span></div>;
+    return <React.Fragment key={key}><p {...props}>{content || <br />}</p>{nested}</React.Fragment>;
+  })}</div>;
+}
+export function Outline({ blocks, editing = false }) {
+  const items = headings(blocks);
+  return <aside className="outline" aria-label="本文目录"><h2>本文目录</h2>{items.length ? <nav>{items.map((item, i) => <button key={item.id || i} style={{ paddingLeft: 14 + (item.level - 1) * 12 }} onClick={() => {
+    const target = editing ? document.querySelector(`[data-id="${CSS.escape(item.id || '')}"]`) : document.getElementById(`block-${item.id}`);
+    target?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  }}>{item.text || '未命名标题'}</button>)}</nav> : <p>添加标题后，<br />这里会自动生成大纲。</p>}</aside>;
+}

@@ -1,0 +1,34 @@
+{
+  "checkedAtLocalDate": "2026-10-16",
+  "timezone": "Asia/Shanghai",
+  "command": "npm audit --json",
+  "exitCode": 0,
+  "report": {
+    "auditReportVersion": 2,
+    "vulnerabilities": {},
+    "metadata": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "dependencies": {
+        "prod": 67,
+        "dev": 41,
+        "optional": 30,
+        "peer": 3,
+        "peerOptional": 0,
+        "total": 113
+      }
+    }
+  },
+  "dependencyGuard": {
+    "status": "passed",
+    "guardedPackages": [{ "package": "@tiptap/core", "version": "3.32.0" }],
+    "issues": []
+  },
+  "scope": "Known registry advisories and reviewed lockfile baselines only; not a security certification of the application."
+}

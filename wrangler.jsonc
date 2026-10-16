@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "howtoagent-workspace",
+  "main": "server/worker.mjs",
+  "compatibility_date": "2026-10-01",
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": true, "not_found_handling": "single-page-application" },
+  "vars": {
+    "APP_ORIGIN": "https://howtoagent-workspace.YOUR_SUBDOMAIN.workers.dev",
+    "OWNER_GITHUB_ID": "REPLACE_WITH_NUMERIC_GITHUB_ID",
+    "GITHUB_REPOSITORY": "zhege712-crypto/howtoagent",
+    "GITHUB_BRANCH": "main",
+    "SITE_TITLE": "Agent 指南"
+  },
+  "d1_databases": [{ "binding": "DB", "database_name": "howtoagent-content", "database_id": "REPLACE_WITH_NEW_D1_ID" }],
+  "r2_buckets": [{ "binding": "FILES", "bucket_name": "howtoagent-private-assets" }],
+  "triggers": { "crons": ["17 * * * *"] }
+}
