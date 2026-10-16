@@ -1,5 +1,6 @@
 import React from 'react';
 import { safeLink } from '../shared/document.mjs';
+import { groupLists } from '../shared/list-groups.mjs';
 export const inlineText = (value) => typeof value === 'string' ? value : Array.isArray(value) ? value.map(inlineText).join('') : value?.text || inlineText(value?.content || []);
 export function headings(blocks) { return (blocks || []).flatMap((b) => [...(b.type === 'heading' ? [{ id: b.id, text: inlineText(b.content), level: b.props?.level || 2 }] : []), ...headings(b.children)]); }
 function Inline({ value }) {
@@ -17,7 +18,12 @@ function Inline({ value }) {
   });
 }
 export function Reader({ blocks, privatePreview = false }) {
-  return <div className="reader-body">{(blocks || []).map((b, index) => {
+  return <div className="reader-body">{groupLists(blocks).map((group, index) => {
+    if (group.kind === 'list') {
+      const List = group.type === 'numberedListItem' ? 'ol' : 'ul';
+      return <List key={group.blocks[0].id || index} start={List === 'ol' ? group.start : undefined}>{group.blocks.map((item, i) => <li key={item.id || i} id={`block-${item.id}`} style={{ textAlign: item.props?.textAlignment }}><Inline value={item.content} />{item.children?.length ? <Reader blocks={item.children} privatePreview={privatePreview} /> : null}</li>)}</List>;
+    }
+    const b = group.block;
     const content = <Inline value={b.content} />;
     const nested = b.children?.length ? <Reader blocks={b.children} privatePreview={privatePreview} /> : null;
     const key = b.id || index;
@@ -33,7 +39,6 @@ export function Reader({ blocks, privatePreview = false }) {
     }
     if (b.type === 'quote') return <blockquote key={key} {...props}>{content}{nested}</blockquote>;
     if (b.type === 'toggleListItem') return <details key={key} {...props}><summary>{content}</summary>{nested}</details>;
-    if (b.type === 'bulletListItem' || b.type === 'numberedListItem') { const List = b.type === 'bulletListItem' ? 'ul' : 'ol'; return <List key={key} {...props} start={b.props?.start}><li>{content}{nested}</li></List>; }
     if (b.type === 'checkListItem') return <div key={key} {...props} className="read-check"><input type="checkbox" checked={!!b.props?.checked} readOnly aria-label={inlineText(b.content)} /><span>{content}{nested}</span></div>;
     return <React.Fragment key={key}><p {...props}>{content || <br />}</p>{nested}</React.Fragment>;
   })}</div>;

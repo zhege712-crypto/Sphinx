@@ -7,6 +7,7 @@ import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading
 import '@blocknote/mantine/style.css';
 import { api, post, downloadJson } from './api';
 import { Outline, Reader } from './Reader';
+import References from './References';
 const { audio, video, file, ...supported } = defaultBlockSpecs;
 const schema = BlockNoteSchema.create({ blockSpecs: supported });
 const Tool = ({ label, icon: Icon, onClick }) => <button type="button" className="icon-button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick}><Icon size={18} /></button>;
@@ -85,6 +86,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
           <BlockNoteView editor={editor} theme="light" onChange={() => changed(state.current.title, editor.document)} />
         </>}
       </div>
+      <References />
       <div className="document-footer">{saving ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />}<span>{saving ? '正在保存…' : dirty ? '等待保存' : '草稿已保存'} · {user.login}</span></div>
     </section>
     <Outline blocks={blocks} editing={!preview} />
