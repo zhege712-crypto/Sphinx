@@ -12,7 +12,7 @@ export const demoDocument = () => [
   { type: 'paragraph', content: [] },
 ];
 
-const blockTypes = new Set(['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem', 'quote', 'codeBlock', 'image', 'table', 'toggleListItem', 'divider', 'linkCard']);
+const blockTypes = new Set(['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem', 'quote', 'codeBlock', 'image', 'imageText', 'table', 'toggleListItem', 'divider', 'linkCard']);
 const colors = new Set(['default', 'gray', 'brown', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink']);
 const alignments = new Set(['left', 'center', 'right', 'justify']);
 export const safeTitle = (value) => {
@@ -63,13 +63,17 @@ export function sanitizeDocument(input) {
         props.title = typeof raw.title === 'string' ? raw.title.slice(0, 160) : '';
         props.url = raw.url ? safeLink(raw.url) : '';
         if (props.url && !/^https?:\/\//.test(props.url)) throw new InputError('网站卡片只支持 http 或 https 链接');
-      } else if (block.type === 'image') {
+      } else if (block.type === 'image' || block.type === 'imageText') {
         if (raw.url && !assetIdFromUrl(raw.url)) throw new InputError('请上传图片；首版不接受外部图片地址');
         props.url = raw.url || '';
         props.name = typeof raw.name === 'string' ? raw.name.slice(0, 180) : '';
         props.caption = typeof raw.caption === 'string' ? raw.caption.slice(0, 1000) : '';
         props.showPreview = raw.showPreview !== false;
         if (Number.isFinite(raw.previewWidth)) props.previewWidth = Math.max(64, Math.min(raw.previewWidth, 1600));
+        if (block.type === 'imageText') {
+          props.side = raw.side === 'right' ? 'right' : 'left';
+          props.imageWidth = Number.isFinite(raw.imageWidth) ? Math.max(25, Math.min(65, raw.imageWidth)) : 40;
+        }
       } else if (block.type === 'table') {
         if (!Array.isArray(block.content?.rows) || block.content.rows.length > 150) throw new InputError('表格最多 150 行');
         content = { type: 'tableContent', rows: block.content.rows.map((row) => {
@@ -111,7 +115,7 @@ export function collectAssets(blocks) {
   return [...ids];
 }
 export function publicBlocks(blocks, assets) {
-  return blocks.map((block) => ({ ...block, props: block.type === 'image' && block.props.url ? { ...block.props, url: `assets/${assetIdFromUrl(block.props.url)}.${assets.get(assetIdFromUrl(block.props.url))?.extension}` } : block.props, ...(block.children ? { children: publicBlocks(block.children, assets) } : {}) }));
+  return blocks.map((block) => ({ ...block, props: ['image', 'imageText'].includes(block.type) && block.props.url ? { ...block.props, url: `assets/${assetIdFromUrl(block.props.url)}.${assets.get(assetIdFromUrl(block.props.url))?.extension}` } : block.props, ...(block.children ? { children: publicBlocks(block.children, assets) } : {}) }));
 }
 export function imageType(bytes) {
   const b = new Uint8Array(bytes);

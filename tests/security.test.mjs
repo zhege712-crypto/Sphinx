@@ -5,7 +5,34 @@ import { sqliteAdapter } from '../server/local-storage.mjs';
 import worker from '../server/worker.mjs';
 import { sanitizeDocument, safeLink, imageType } from '../shared/document.mjs';
 import { hash } from '../server/auth.mjs';
+import { imageLayoutReplacement } from '../shared/image-layout.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
+test('图文排版切换保留图片和多段正文，退出并排后正文回到普通流', () => {
+  const image = { id: 'img', type: 'image', props: { url: '/api/assets/c71e0000-0000-4000-8000-000000000001', name: '图', caption: '图注', previewWidth: 320 } };
+  const beside = imageLayoutReplacement(image, 'image-left')[0];
+  assert.equal(beside.type, 'imageText'); assert.equal(beside.children[0].type, 'paragraph');
+  beside.children = [{ id: 'p1', type: 'paragraph', content: '第一段' }, { id: 'p2', type: 'bulletListItem', content: '重点' }];
+  const right = imageLayoutReplacement(beside, 'text-left')[0];
+  assert.equal(right.props.side, 'right'); assert.deepEqual(right.children, beside.children);
+  const stacked = imageLayoutReplacement(right, 'center');
+  assert.equal(stacked[0].props.url, image.props.url); assert.equal(stacked[0].props.textAlignment, 'center'); assert.equal(stacked[0].props.previewWidth, 320);
+  assert.deepEqual(stacked.slice(1), beside.children); assert.equal(stacked[0].children, undefined);
+});
+test('图文并排的图片仍受私有素材与发布检查保护，并保存正文与尺寸', async (t) => {
+  const f = await fixture(t); const d = await f.create();
+  const png = Uint8Array.from([137,80,78,71,13,10,26,10,0,0]);
+  const a = await (await f.as(f.editor, '/api/assets', 'POST', png)).json();
+  const value = [{ type: 'imageText', props: { url: a.url, side: 'right', imageWidth: 45, caption: '示意图' }, children: [{ type: 'paragraph', content: '图片旁的正文' }] }];
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: 1, blocks: value })).status, 200);
+  assert.equal((await f.req(a.url)).status, 401);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: 2 })).status, 200);
+  const published = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.equal(published.blocks[0].props.url, `assets/${a.id}.png`); assert.equal(published.blocks[0].props.imageWidth, 45);
+  assert.ok(published.text.includes('图片旁的正文')); assert.equal((await f.req(`/assets/${a.id}.png`)).status, 200);
+  assert.throws(() => sanitizeDocument([{ ...value[0], props: { url: 'https://other.example/private.png' } }]), /上传图片/);
+  const safe = sanitizeDocument([{ ...value[0], props: { ...value[0].props, imageWidth: 900, previewWidth: -10, side: 'evil', style: 'position:fixed' } }])[0];
+  assert.equal(safe.props.imageWidth, 65); assert.equal(safe.props.previewWidth, 64); assert.equal(safe.props.side, 'left'); assert.equal(safe.props.style, undefined);
+});
 const blocks = (text) => [{ type: 'paragraph', content: text }];
 async function fixture(t) {
   const DB = sqliteAdapter(); DB.exec(await readFile(new URL('../server/schema.sql', import.meta.url), 'utf8')); t.after(() => DB.close());
@@ -42,9 +69,10 @@ test('保存以版本号防止覆盖，同时保留可恢复的历史', async (t
 test('普通伙伴可发布，之后的草稿修改不会泄露到公开版本', async (t) => {
   const f = await fixture(t); const d = await f.create();
   await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: '公开标题', version: 1, blocks: blocks('公开内容') });
+  await f.DB.prepare('UPDATE documents SET updated_at=? WHERE id=?').bind('2026-10-16T08:30:00.000Z', d.id).run();
   assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: 2 })).status, 200);
   await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: '秘密草稿', version: 2, blocks: blocks('秘密内容') });
-  const c = await (await f.req('/api/public/catalog')).json(); assert.equal(c.documents[0].title, '公开标题'); assert.ok(!JSON.stringify(c).includes('秘密'));
+  const c = await (await f.req('/api/public/catalog')).json(); assert.equal(c.documents[0].title, '公开标题'); assert.equal(c.documents[0].updatedAt, '2026-10-16T08:30:00.000Z'); assert.ok(!JSON.stringify(c).includes('秘密'));
   assert.equal((await f.as(f.owner, `/api/documents/${d.id}/publish`, 'POST', { version: 2 })).status, 409);
 });
 test('草稿图片保密，真实图片格式验证，明确发布后才允许匿名访问', async (t) => {

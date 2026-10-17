@@ -95,7 +95,7 @@ export async function authRoute(request, env, path) {
     const tokenResponse = await (env.OAUTH_FETCH || fetch)('https://github.com/login/oauth/access_token', { method: 'POST', signal: AbortSignal.timeout(10000), headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code, redirect_uri: `${env.APP_ORIGIN}/auth/callback` }) });
     const token = await tokenResponse.json();
     if (!tokenResponse.ok || !token.access_token) throw new HttpError(502, 'GitHub 验证未完成，请重新登录');
-    const profileResponse = await (env.OAUTH_FETCH || fetch)('https://api.github.com/user', { signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${token.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'howtoagent' } });
+    const profileResponse = await (env.OAUTH_FETCH || fetch)('https://api.github.com/user', { signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${token.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Sphinx' } });
     const profile = await profileResponse.json();
     if (!profileResponse.ok || !Number.isSafeInteger(profile.id) || !profile.login) throw new HttpError(502, '无法读取 GitHub 身份，请稍后重试');
     const id = String(profile.id);

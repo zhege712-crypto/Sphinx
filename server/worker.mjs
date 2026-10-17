@@ -143,7 +143,7 @@ async function route(request, env) {
   if (path === '/api/members' && request.method === 'GET') return json({ members: await queryAll(env, 'SELECT * FROM members ORDER BY active DESC,created_at') });
   if (path === '/api/members' && request.method === 'POST') {
     const input = await body(request); if (!/^[a-zA-Z0-9][a-zA-Z0-9-]{0,38}$/.test(input.login ?? '')) throw new HttpError(400, '请输入正确的 GitHub 用户名');
-    const response = await fetch(`https://api.github.com/users/${encodeURIComponent(input.login)}`, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'howtoagent' }, signal: AbortSignal.timeout(10000) });
+    const response = await fetch(`https://api.github.com/users/${encodeURIComponent(input.login)}`, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'Sphinx' }, signal: AbortSignal.timeout(10000) });
     const profile = await response.json(); if (!response.ok || !Number.isSafeInteger(profile.id)) throw new HttpError(400, '未找到这个 GitHub 账号，请检查用户名');
     if (String(profile.id) === env.OWNER_GITHUB_ID) throw new HttpError(400, '该账号已经是站主');
     await env.DB.prepare('INSERT INTO members(github_id,login,name,active,created_at) VALUES(?,?,?,1,?) ON CONFLICT(github_id) DO UPDATE SET login=excluded.login,active=1').bind(String(profile.id), profile.login, profile.name || '', now()).run();

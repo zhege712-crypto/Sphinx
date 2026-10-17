@@ -1,5 +1,5 @@
 ---
-name: "Agent 指南"
+name: "Sphinx"
 description: "A familiar document desk for authoring and reading beginner guides."
 colors:
   primary: "#3370ff"
@@ -115,13 +115,15 @@ components:
     padding: "9px 0"
 ---
 
-# Design System: Agent 指南
+# Design System: Sphinx
 
 ## Overview
 
 **Creative North Star: "The Familiar Document Desk"**
 
 This is the user-approved Feishu-like direction A: a white document, a cool gray navigation rail, blue actions, small corners, and quiet dividers. Its character is practical, calm, and immediately recognizable to people who already write in document tools. The identity comes from the relationship between the persistent tree, the open writing surface, and the compact utility controls.
+
+The product name is **Sphinx**, written in English in the brand and document title. “指南” names the guide content section; it is not part of the product name. The repository uses the same Sphinx name. This naming change preserves the established document-desk appearance.
 
 The interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.
 
@@ -180,9 +182,9 @@ The palette is restrained: cool neutrals support one blue accent, with green and
 
 The desktop shell fills the viewport height. Its left navigation is fixed at (248px), while the main area flexes. The brand row and utility header align at (64px). The navigation rail scrolls above a bottom identity area; the main writing column and right outline have their own overflow regions.
 
-The document composition has a flexible central column and a right outline of (190px), widening to (218px) when the viewport is at least (1450px). The screenshots supplied for documentation are (1536 × 1024), so they show this wider outline. The central document has a maximum outer width of (1020px), with base insets (45px 62px 90px); horizontal insets become (68px) at the wide breakpoint and (44px) at widths up to (1240px). Public articles begin with a slightly larger top inset (52px).
+The document composition has a flexible central column and a right outline of (190px), widening to (218px) when the viewport is at least (1450px). The original editor/documents/reader screenshots are (1536 × 1024) and show the wider outline; the newer Sphinx editor/reader captures show the narrower desktop arrangement. The central document has a maximum outer width of (1020px), with base insets (45px 62px 90px); horizontal insets become (68px) at the wide breakpoint and (44px) at widths up to (1240px). Public articles begin with a slightly larger top inset (52px).
 
-The editor toolbar remains sticky above the independently scrolling document; its height is (61px). Management screens instead use a centered container with a maximum width (1200px), broad padding, and full-width table rows. Image-library thumbnails use a three-column grid, becoming two columns at the compact desktop breakpoint.
+The editor toolbar remains sticky above the independently scrolling document and has automatic height. Its top row holds formatting tools and can scroll horizontally; a thin rule separates a second row of labeled insertion actions. Management screens instead use a centered container with a maximum width (1200px), broad padding, and full-width table rows. Image-library thumbnails use a three-column grid, becoming two columns at the compact desktop breakpoint.
 
 Spacing is compact around actions and navigation, generous around article headings and sections. The recorded small spacing steps are reused, but this is not a rigid modular scale: source values reflect document-specific relationships.
 
@@ -237,7 +239,19 @@ Document management uses tables and flat full-width rows, not a card grid. Row s
 
 Editor, private preview, and reader share white paper and the same title/content hierarchy. Body paragraphs, numbered lists, bullets, nested lists, tables, code, quotes, images, and captions remain part of the reading flow. Tables have fine visible cell boundaries, subdued header fills, and horizontal overflow when needed. Images keep their aspect ratio and fit the content width. Code blocks have a neutral fill, compact corners, and their own horizontal scrolling.
 
-The toolbar groups undo/redo, text style, headings, lists, images, and tables with thin vertical dividers. Publication and preview remain in the utility header rather than inside the writing content. Private preview has an explicit amber label. Preserve that state distinction on new surfaces.
+The toolbar's top row groups undo/redo, text style, headings, and lists with thin vertical dividers. A second row begins with the quiet label “插入” and exposes “图片”, “图文并排”, “表格”, and “链接卡片” as icon-and-text buttons (12px), rather than hiding their purpose in icons alone. Publication and preview remain in the utility header rather than inside the writing content. Private preview has an explicit amber label. Preserve that state distinction on new surfaces.
+
+### Images and Image-Text Layouts
+
+The native single-image block retains visible utility controls whenever it has an image URL. These controls sit on Navigation Gray, use the control radius, padding (10px 12px), and quiet utility labels (11px). A layout select offers left, center, and right single-image alignment plus image-left/text-right and text-left/image-right arrangements. The image remains proportional and fits within the document width.
+
+Single-image sizing provides a range slider, an explicit pixel input (64–1600), and Small, Medium, and Full Width presets. The slider adapts to the available editor width; presets use roughly one-third, two-thirds, or all of that space. The pixel field is clamped on blur, and invalid values block saving until corrected. Clearing the field restores automatic sizing. A separate optional caption field stays visible below the sizing row.
+
+The `imageText` block pairs an image figure with genuinely editable rich child blocks, including multiple paragraphs, in a two-column grid with a gap (24px). Image placement can be left or right, and its share of the content width is adjustable from (25–65%) in five-point steps, defaulting to (40%). The copy column uses normal document typography, no nested indentation, and a quiet empty-text hint. In public reading, the same proportions and ordering apply without authoring controls. Switching back to a single image preserves the image and caption and moves all text children into normal following blocks. Do not flatten this text into a caption or discard it during layout changes.
+
+### Published Update Metadata
+
+Each public guide article and Reference term shows “最近更新” with a semantic time element below its title. It uses the published snapshot's `updatedAt`, falling back to `publishedAt`; later private draft changes do not change the reader's date. Invalid or missing timestamps produce no label. The compact metadata row uses the existing quiet text treatment with tabular numerals, a gap (9px), and a bottom margin (30px), preserving the title-to-body hierarchy.
 
 ### Dialogs and Feedback
 

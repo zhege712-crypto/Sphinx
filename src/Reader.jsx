@@ -34,10 +34,12 @@ export function Reader({ blocks, privatePreview = false }) {
     if (b.type === 'table') return <div key={key} {...props} className="table-scroll"><table><tbody>{b.content.rows.map((row, r) => <tr key={r}>{row.cells.map((cell, c) => { const Cell = r === 0 && b.content.headerRows === 1 ? 'th' : 'td'; return <Cell key={c} colSpan={cell.props?.colspan} rowSpan={cell.props?.rowspan}><Inline value={typeof cell === 'string' || Array.isArray(cell) ? cell : cell.content} /></Cell>; })}</tr>)}</tbody></table>{nested}</div>;
     if (b.type === 'codeBlock') return <pre key={key} {...props}><code>{inlineText(b.content)}</code></pre>;
     if (b.type === 'divider') return <hr key={key} {...props} />;
-    if (b.type === 'image') {
+    if (b.type === 'image' || b.type === 'imageText') {
       const url = b.props?.url || '';
       const safe = privatePreview ? /^\/api\/assets\/[a-f0-9-]{36}$/.test(url) : /^assets\/[a-f0-9-]{36}\.(png|jpg|gif|webp)$/.test(url);
-      return safe ? <figure key={key} {...props}><img src={url} alt={b.props.caption || b.props.name || '文章配图'} style={{ maxWidth: b.props.previewWidth || '100%' }} loading="lazy" /><figcaption>{b.props.caption}</figcaption></figure> : null;
+      const figure = <figure style={b.type === 'image' ? { width: b.props.previewWidth ? Math.min(1600, Math.max(64, b.props.previewWidth)) : undefined, maxWidth: '100%', marginLeft: b.props.textAlignment === 'right' || b.props.textAlignment === 'center' ? 'auto' : 0, marginRight: b.props.textAlignment === 'center' ? 'auto' : 0 } : undefined}><img src={url} alt={b.props.name || b.props.caption || '文章配图'} loading="lazy" />{b.props.caption && <figcaption>{b.props.caption}</figcaption>}</figure>;
+      if (b.type === 'imageText') return <div key={key} {...props} className="image-text-layout" data-side={b.props.side === 'right' ? 'right' : 'left'} style={{ '--image-width': `${Math.max(25, Math.min(65, b.props.imageWidth || 40))}%` }}>{safe ? figure : null}<div className="image-text-copy">{nested}</div></div>;
+      return safe ? <React.Fragment key={key}><div {...props}>{figure}</div>{nested}</React.Fragment> : nested;
     }
     if (b.type === 'quote') return <blockquote key={key} {...props}>{content}{nested}</blockquote>;
     if (b.type === 'toggleListItem') return <details key={key} {...props}><summary>{content}</summary>{nested}</details>;

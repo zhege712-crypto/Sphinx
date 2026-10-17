@@ -1,9 +1,9 @@
 {
-  "name": "howtoagent",
+  "name": "sphinx",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Agent 入门指南的阅读站与受邀伙伴创作工作台",
+  "description": "Sphinx：Agent 指南与受邀伙伴创作空间",
   "engines": {
     "node": ">=24.0.0"
   },

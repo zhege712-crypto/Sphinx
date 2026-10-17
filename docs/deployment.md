@@ -6,7 +6,7 @@
 
 仓库 Settings → Pages → Build and deployment → Source 选择 GitHub Actions。推送 main 后，`.github/workflows/pages.yml` 自动测试、构建并部署。只发布 `public/catalog.json` 中明确公开的快照及 `public/assets/`；数据库、私有草稿和 `.local/` 不参与构建。
 
-初始公开目录为空，这是预期状态。不要为填充首页把私有草稿写进 public。项目 URL 为 `https://zhege712-crypto.github.io/howtoagent/`，实际可用状态以 Pages 成功部署为准。
+初始公开目录为空，这是预期状态。不要为填充首页把私有草稿写进 public。项目 URL 为 `https://zhege712-crypto.github.io/Sphinx/`，实际可用状态以 Pages 成功部署为准。
 
 ## 2. Cloudflare 创作工作台
 
@@ -24,7 +24,7 @@ npx wrangler d1 create howtoagent-content
 npx wrangler d1 execute howtoagent-content --remote --file=server/schema.sql
 ```
 
-更新 `wrangler.jsonc` 的 `APP_ORIGIN` 为实际 Worker 的 HTTPS origin（不带路径或末尾斜杠），`OWNER_GITHUB_ID` 为站主的稳定数字 GitHub ID。用户改名后仍靠 ID 判断权限。仓库必须是此独立仓库 `zhege712-crypto/howtoagent`，发布分支 main。
+更新 `wrangler.jsonc` 的 `APP_ORIGIN` 为实际 Worker 的 HTTPS origin（不带路径或末尾斜杠），`OWNER_GITHUB_ID` 为站主的稳定数字 GitHub ID。用户改名后仍靠 ID 判断权限。仓库必须是此独立仓库 `zhege712-crypto/Sphinx`，发布分支 main。
 
 ## 3. 独立 GitHub OAuth App
 
@@ -73,4 +73,4 @@ npx wrangler deploy
 
 Reference 升级为独立可编辑词条（数据库 `documents.kind='reference'`），复用已有字段，不需要改表或搬迁旧稿。先部署新 Worker，再在站主的词条索引点击“迁移原有词条”。接口 `/api/references/initialize` 仅站主可调用，使用固定 ID 且不会覆盖既有词条；只发布仍与原公开模板完全一致、版本为 1 的未编辑初稿。迁移和词条发布仍走同一 GitHub 原子提交与恢复流程。已编辑或归档的词条不会被重置。
 
-工作台为 `https://howtoagent-workspace.zhege712-872.workers.dev`，阅读站为 `https://zhege712-crypto.github.io/howtoagent/`。用户亲自配置 OAuth 和单仓库发布凭证；后端已确认两者生效。已实际验证站主 GitHub 登录、共享草稿刷新恢复、5 MiB D1 图片上传与解码、发布前匿名拒绝，以及从工作台发布到 GitHub Pages 的完整链路。测试稿经站主批准删除，正式目录保持为空，留给作者开始创作。发布凭证于 2026-11-16 到期，届时需续换。伙伴权限边界已有自动测试，尚未用第二个真人账号验收。
+工作台为 `https://howtoagent-workspace.zhege712-872.workers.dev`，阅读站为 `https://zhege712-crypto.github.io/Sphinx/`。用户亲自配置 OAuth 和单仓库发布凭证；后端已确认两者生效。已实际验证站主 GitHub 登录、共享草稿刷新恢复、5 MiB D1 图片上传与解码、发布前匿名拒绝，以及从工作台发布到 GitHub Pages 的完整链路。测试稿经站主批准删除，正式目录保持为空，留给作者开始创作。发布凭证于 2026-11-16 到期，届时需续换。伙伴权限边界已有自动测试，尚未用第二个真人账号验收。

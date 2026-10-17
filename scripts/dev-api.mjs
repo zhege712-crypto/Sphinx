@@ -7,7 +7,7 @@ import { demoDocument, sanitizeDocument } from '../shared/document.mjs';
 await mkdir('.local', { recursive: true });
 const DB = sqliteAdapter('.local/guide.sqlite');
 DB.exec(await readFile(new URL('../server/schema.sql', import.meta.url), 'utf8'));
-const env = { DB, FILES: await fileBucket('.local/assets'), LOCAL_DEMO: true, OWNER_GITHUB_ID: 'local-owner', APP_ORIGIN: 'http://127.0.0.1:5173', SITE_TITLE: 'Agent 指南' };
+const env = { DB, FILES: await fileBucket('.local/assets'), LOCAL_DEMO: true, OWNER_GITHUB_ID: 'local-owner', APP_ORIGIN: 'http://127.0.0.1:5173', SITE_TITLE: 'Sphinx' };
 if (!await DB.prepare('SELECT id FROM documents LIMIT 1').first()) {
   await DB.prepare('INSERT INTO documents(id,title,draft,updated_at,updated_by) VALUES(?,?,?,?,?)').bind(crypto.randomUUID(), '编辑器使用示例', JSON.stringify(sanitizeDocument(demoDocument())), new Date().toISOString(), 'local-owner').run();
 }

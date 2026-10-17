@@ -3,12 +3,13 @@ import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core';
 import { zh } from '@blocknote/core/locales';
 import { createReactBlockSpec, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
-import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2 } from 'lucide-react';
+import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2, Columns2 } from 'lucide-react';
 import '@blocknote/mantine/style.css';
 import { api, post, downloadJson } from './api';
 import { Outline, Reader } from './Reader';
 import References, { BuildCredits } from './References';
 import { WebsiteCard, websiteUrl } from './WebsiteCard';
+import { imageBlock, imageTextBlock } from './ImageBlocks';
 const { audio, video, file, ...supported } = defaultBlockSpecs;
 function EditableWebsiteCard({ block, editor }) {
   const [url, setUrl] = useState(block.props.url);
@@ -21,7 +22,7 @@ function EditableWebsiteCard({ block, editor }) {
 const linkCard = createReactBlockSpec({ type: 'linkCard', propSchema: { title: { default: '' }, url: { default: '' } }, content: 'none' }, {
   render: props => <EditableWebsiteCard {...props} />,
 })();
-const schema = BlockNoteSchema.create({ blockSpecs: { ...supported, linkCard } });
+const schema = BlockNoteSchema.create({ blockSpecs: { ...supported, image: imageBlock, imageText: imageTextBlock, linkCard } });
 const Tool = ({ label, icon: Icon, onClick }) => <button type="button" className="icon-button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick}><Icon size={18} /></button>;
 
 export default forwardRef(function Editor({ document: initial, user, onSaved, onStatus, preview, toast, referenceEntries, onReferenceOpen, onBackReference }, ref) {
@@ -35,6 +36,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
   const [uploadCount, setUploadCount] = useState(0);
   const state = useRef({ title: initial.title, blocks: initial.blocks, version: initial.version, generation: 0, saved: 0, failed: false });
   const pending = useRef(null); const timer = useRef(); const fileInput = useRef(); const alive = useRef(true);
+  const imageInsertMode = useRef('image');
   const uploads = useRef(new Set());
   async function upload(file) {
     let complete;
@@ -51,6 +53,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
   async function flush() {
     clearTimeout(timer.current);
     if (document.querySelector('.website-card-editor input[aria-invalid="true"]')) throw new Error('请先修正网站卡片中尚未保存的网址');
+    if (document.querySelector('.image-width-input[aria-invalid="true"]')) throw new Error('图片宽度应为 64–1600 像素');
     if (uploads.current.size) { await Promise.all([...uploads.current]); return flush(); }
     if (pending.current) { await pending.current; if (state.current.generation !== state.current.saved) return flush(); return state.current; }
     if (state.current.failed) throw new Error(error || '请先处理保存错误，再继续');
@@ -75,20 +78,24 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
     clearTimeout(timer.current); if (!s.failed) timer.current = setTimeout(() => flush().catch(() => {}), 1000);
   }
   useImperativeHandle(ref, () => ({ flush, snapshot: () => state.current, publish: async () => { const s = await flush(); const result = await post(`/api/documents/${initial.id}/publish`, { version: s.version }); return result; } }));
-  useEffect(() => { const prevent = (e) => { if (state.current.generation !== state.current.saved || uploads.current.size || document.querySelector('.website-card-editor input[aria-invalid="true"]')) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', prevent); return () => { alive.current = false; clearTimeout(timer.current); window.removeEventListener('beforeunload', prevent); }; }, []);
+  useEffect(() => { const prevent = (e) => { if (state.current.generation !== state.current.saved || uploads.current.size || document.querySelector('.website-card-editor input[aria-invalid="true"], .image-width-input[aria-invalid="true"]')) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', prevent); return () => { alive.current = false; clearTimeout(timer.current); window.removeEventListener('beforeunload', prevent); }; }, []);
   const blockType = (type, props = {}) => { const current = editor.getTextCursorPosition().block; editor.updateBlock(current, { type, props }); editor.focus(); };
   const addTable = () => { editor.insertBlocks([{ type: 'table', content: { type: 'tableContent', headerRows: 1, rows: [{ cells: ['列一', '列二', '列三'] }, { cells: ['', '', ''] }, { cells: ['', '', ''] }] } }], editor.getTextCursorPosition().block, 'after'); editor.focus(); };
   return <div className="document-layout">
     <section className="document-column">
-      {!preview && <div className="editor-toolbar" role="toolbar" aria-label="文字排版">
+      {!preview && <div className="editor-toolbar" role="toolbar" aria-label="文字排版"><div className="editor-format-tools">
         <Tool label="撤销" icon={Undo2} onClick={() => editor.undo()} /><Tool label="重做" icon={Redo2} onClick={() => editor.redo()} /><span className="toolbar-divider" />
         <button className="text-tool" onClick={() => blockType('paragraph')}>正文</button><span className="toolbar-divider" />
         <Tool label="加粗" icon={Bold} onClick={() => editor.toggleStyles({ bold: true })} /><Tool label="斜体" icon={Italic} onClick={() => editor.toggleStyles({ italic: true })} /><Tool label="下划线" icon={Underline} onClick={() => editor.toggleStyles({ underline: true })} /><Tool label="删除线" icon={Strikethrough} onClick={() => editor.toggleStyles({ strike: true })} /><span className="toolbar-divider" />
         <Tool label="一级标题" icon={Heading1} onClick={() => blockType('heading', { level: 1 })} /><Tool label="二级标题" icon={Heading2} onClick={() => blockType('heading', { level: 2 })} /><Tool label="三级标题" icon={Heading3} onClick={() => blockType('heading', { level: 3 })} /><span className="toolbar-divider" />
         <Tool label="无序列表" icon={List} onClick={() => blockType('bulletListItem')} /><Tool label="有序列表" icon={ListOrdered} onClick={() => blockType('numberedListItem')} /><Tool label="待办列表" icon={ListTodo} onClick={() => blockType('checkListItem')} /><span className="toolbar-divider" />
-        <Tool label="插入图片" icon={ImagePlus} onClick={() => fileInput.current.click()} /><Tool label="插入表格" icon={Table2} onClick={addTable} />
-        <Tool label="插入网站卡片" icon={Link2} onClick={() => { editor.insertBlocks([{ type: 'linkCard', props: { title: '', url: '' } }], editor.getTextCursorPosition().block, 'after'); }} />
-        <input ref={fileInput} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={async (e) => { const input = e.target; const file = input.files?.[0]; if (!file) return; try { const url = await upload(file); editor.insertBlocks([{ type: 'image', props: { url, name: file.name } }], editor.getTextCursorPosition().block, 'after'); } catch { /* Upload reports its own actionable error. */ } input.value = ''; }} />
+        </div><div className="editor-insert-tools"><span>插入</span>
+        <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { imageInsertMode.current = 'image'; fileInput.current.click(); }}><ImagePlus size={16} />图片</button>
+        <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { imageInsertMode.current = 'imageText'; fileInput.current.click(); }}><Columns2 size={16} />图文并排</button>
+        <button type="button" onMouseDown={e => e.preventDefault()} onClick={addTable}><Table2 size={16} />表格</button>
+        <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { editor.insertBlocks([{ type: 'linkCard', props: { title: '', url: '' } }], editor.getTextCursorPosition().block, 'after'); }}><Link2 size={16} />链接卡片</button>
+        </div>
+        <input ref={fileInput} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={async (e) => { const input = e.target; const file = input.files?.[0]; if (!file) return; try { const url = await upload(file); editor.insertBlocks([{ type: imageInsertMode.current, props: { url, name: file.name }, ...(imageInsertMode.current === 'imageText' ? { children: [{ type: 'paragraph', content: [] }] } : {}) }], editor.getTextCursorPosition().block, 'after'); } catch { /* Upload reports its own actionable error. */ } input.value = ''; }} />
       </div>}
       {uploadCount > 0 && <div className="upload-progress" role="status"><Loader2 size={14} className="spin" />正在上传 {uploadCount} 张图片，完成后自动保存…</div>}
       {error && <div className="save-error" role="alert"><strong>草稿尚未保存</strong><p>{error}</p><div className="button-row"><button onClick={() => { state.current.failed = false; setError(''); flush().catch(() => {}); }}><RotateCcw size={15} />重新尝试</button><button onClick={() => downloadJson(`${title || '文档'}-未保存.json`, state.current)}><Download size={15} />下载当前内容</button><button onClick={() => { if (confirm('重新加载会离开当前编辑内容。请先下载副本，确定继续吗？')) { sessionStorage.removeItem(recoveryKey); location.reload(); } }}>加载最新版本</button></div></div>}

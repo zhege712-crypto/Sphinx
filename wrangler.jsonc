@@ -8,9 +8,9 @@
   "vars": {
     "APP_ORIGIN": "https://howtoagent-workspace.zhege712-872.workers.dev",
     "OWNER_GITHUB_ID": "301592077",
-    "GITHUB_REPOSITORY": "zhege712-crypto/howtoagent",
+    "GITHUB_REPOSITORY": "zhege712-crypto/Sphinx",
     "GITHUB_BRANCH": "main",
-    "SITE_TITLE": "Agent 指南"
+    "SITE_TITLE": "Sphinx"
   },
   "d1_databases": [{ "binding": "DB", "database_name": "howtoagent-content", "database_id": "cfbcc707-81dc-47f9-a425-af1d309238e0" }],
   "triggers": { "crons": ["17 * * * *"] }

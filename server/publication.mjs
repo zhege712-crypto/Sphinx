@@ -5,10 +5,10 @@ const parse = (value) => value ? JSON.parse(value) : null;
 export async function publicCatalog(env) {
   const rows = await queryAll(env, 'SELECT published FROM documents WHERE archived=0 AND published IS NOT NULL ORDER BY position,title');
   const jobs = await queryAll(env, "SELECT id FROM publication_jobs WHERE status='complete' ORDER BY created_at DESC LIMIT 100");
-  return { schemaVersion: 1, siteTitle: env.SITE_TITLE || 'Agent 指南', documents: rows.map((r) => parse(r.published)), publicationIds: jobs.map((j) => j.id) };
+  return { schemaVersion: 1, siteTitle: env.SITE_TITLE || 'Sphinx', documents: rows.map((r) => parse(r.published)), publicationIds: jobs.map((j) => j.id) };
 }
 async function github(env, path, init = {}) {
-  const response = await (env.GITHUB_FETCH || fetch)(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/${path}`, { ...init, signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${env.GITHUB_PUBLISH_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'howtoagent-publisher', 'Content-Type': 'application/json' } });
+  const response = await (env.GITHUB_FETCH || fetch)(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/${path}`, { ...init, signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${env.GITHUB_PUBLISH_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'Sphinx-publisher', 'Content-Type': 'application/json' } });
   if (!response.ok) throw new HttpError(response.status === 409 || response.status === 422 ? 409 : 502, 'GitHub 发布未完成，请检查独立仓库配置或稍后重试；草稿仍然保留');
   return response.json();
 }
@@ -53,7 +53,7 @@ export async function publishedVersion(env, row) {
     totalSize += asset.size;
   }
   if (totalSize > 15 * 1024 * 1024) throw new HttpError(400, '单次发布图片总量应小于 15 MB，请压缩或拆分章节');
-  return { snapshot: { id: row.id, title: row.title, parentId: row.parent_id, position: row.position, kind: row.kind, version: row.version, publishedAt: now(), blocks: publicBlocks(blocks, assets), text: documentText(blocks) }, assets: [...assets.values()] };
+  return { snapshot: { id: row.id, title: row.title, parentId: row.parent_id, position: row.position, kind: row.kind, version: row.version, updatedAt: row.updated_at, publishedAt: now(), blocks: publicBlocks(blocks, assets), text: documentText(blocks) }, assets: [...assets.values()] };
 }
 async function applyJob(env, job) {
   // Set-based updates keep approved subtree changes and image publication below
