@@ -42,7 +42,7 @@ export default function App() {
   useEffect(() => { refreshSession().finally(() => setBooting(false)); const keyboard = (e) => { if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); searchRef.current?.focus(); } }; window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard); }, []);
   useEffect(() => { const change = () => setRoute(location.hash || '#/read'); window.addEventListener('hashchange', change); return () => window.removeEventListener('hashchange', change); }, []);
   async function loadPublic() {
-    try { const catalog = hasBackend ? await api('/api/public/catalog') : await fetch(new URL('catalog.json', document.baseURI)).then((r) => { if (!r.ok) throw new Error('目录加载失败'); return r.json(); }); setPublicDocs(catalog.documents || []); setLoadError(''); return catalog.documents || []; }
+    try { const catalog = hasBackend ? await api('/api/public/catalog') : await fetch(new URL('catalog.json', document.baseURI), { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error('目录加载失败'); return r.json(); }); setPublicDocs(catalog.documents || []); setLoadError(''); return catalog.documents || []; }
     catch (e) { setLoadError('公开目录暂时无法加载，请稍后重试'); return []; }
   }
   async function refreshDocs() { const r = await api('/api/documents'); setDocs(r.documents); return r.documents; }
