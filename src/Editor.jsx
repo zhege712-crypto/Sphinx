@@ -3,7 +3,7 @@ import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core';
 import { zh } from '@blocknote/core/locales';
 import { createReactBlockSpec, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
-import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2, Link, Columns2 } from 'lucide-react';
+import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2, Link, Columns2, ArrowLeft } from 'lucide-react';
 import '@blocknote/mantine/style.css';
 import { api, post, downloadJson } from './api';
 import { Outline, Reader } from './Reader';
@@ -11,6 +11,8 @@ import References, { BuildCredits } from './References';
 import { WebsiteCard, websiteUrl } from './WebsiteCard';
 import { imageBlock, imageTextBlock } from './ImageBlocks';
 import TermLinkDialog from './TermLinkDialog';
+import { TagEditor, TagList } from './Tags';
+import useScrollMemory from './useScrollMemory';
 const { audio, video, file, ...supported } = defaultBlockSpecs;
 function EditableWebsiteCard({ block, editor }) {
   const [url, setUrl] = useState(block.props.url);
@@ -26,17 +28,20 @@ const linkCard = createReactBlockSpec({ type: 'linkCard', propSchema: { title: {
 const schema = BlockNoteSchema.create({ blockSpecs: { ...supported, image: imageBlock, imageText: imageTextBlock, linkCard } });
 const Tool = ({ label, icon: Icon, onClick }) => <button type="button" className="icon-button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick}><Icon size={18} /></button>;
 
-export default forwardRef(function Editor({ document: initial, user, onSaved, onStatus, preview, toast, referenceEntries, onReferenceOpen, onBackReference }, ref) {
+export default forwardRef(function Editor({ document: initial, user, onSaved, onStatus, preview, toast, referenceEntries, onReferenceOpen, onBackReference, onBack, backLabel }, ref) {
+  const column = useRef(); useScrollMemory(`writer:${initial.id}`, column);
   const recoveryKey = `guide-recovery:${user.id}:${initial.id}`;
   const [recovery, setRecovery] = useState(() => { try { return JSON.parse(sessionStorage.getItem(recoveryKey)); } catch { return null; } });
   const [title, setTitle] = useState(initial.title);
   const [blocks, setBlocks] = useState(initial.blocks);
+  const [tags, setTags] = useState(initial.tags || []);
+  const tagEditorRef = useRef(); const tagDraft = useRef('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [uploadCount, setUploadCount] = useState(0);
   const [linkTarget, setLinkTarget] = useState(null);
-  const state = useRef({ title: initial.title, blocks: initial.blocks, version: initial.version, generation: 0, saved: 0, failed: false });
+  const state = useRef({ title: initial.title, blocks: initial.blocks, tags: initial.tags || [], version: initial.version, generation: 0, saved: 0, failed: false });
   const pending = useRef(null); const timer = useRef(); const fileInput = useRef(); const alive = useRef(true);
   const imageInsertMode = useRef('image');
   const uploads = useRef(new Set());
@@ -78,6 +83,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
     setLinkTarget(null); editor.focus();
   }
   async function flush() {
+    tagEditorRef.current?.commit();
     clearTimeout(timer.current);
     if (document.querySelector('.website-card-editor input[aria-invalid="true"]')) throw new Error('请先修正网站卡片中尚未保存的网址');
     if (document.querySelector('.image-width-input[aria-invalid="true"]')) throw new Error('图片宽度应为 64–1600 像素');
@@ -89,10 +95,10 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
     setSaving(true); onStatus('saving');
     const task = (async () => {
       try {
-        const { document: saved } = await api(`/api/documents/${initial.id}`, { method: 'PUT', body: JSON.stringify({ title: snapshot.title, blocks: snapshot.blocks, version: snapshot.version }) });
+        const { document: saved } = await api(`/api/documents/${initial.id}`, { method: 'PUT', body: JSON.stringify({ title: snapshot.title, blocks: snapshot.blocks, tags: snapshot.tags, version: snapshot.version }) });
         state.current.version = saved.version; state.current.saved = snapshot.generation;
-        if (alive.current) { onSaved(saved); setError(''); setDirty(state.current.generation !== snapshot.generation); onStatus(state.current.generation === snapshot.generation ? 'saved' : 'dirty'); }
-        if (state.current.generation === snapshot.generation) sessionStorage.removeItem(recoveryKey);
+        if (alive.current) { onSaved(saved); setError(''); const unsaved = state.current.generation !== snapshot.generation || !!tagDraft.current.trim(); setDirty(unsaved); onStatus(unsaved ? 'dirty' : 'saved'); }
+        if (state.current.generation === snapshot.generation && !tagDraft.current) sessionStorage.removeItem(recoveryKey);
         return state.current;
       } catch (e) { state.current.failed = true; if (alive.current) { setError(e.message); onStatus('error'); } throw e; }
       finally { pending.current = null; if (alive.current) setSaving(false); }
@@ -101,15 +107,15 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
   function changed(nextTitle, nextBlocks) {
     const s = state.current; s.title = nextTitle; s.blocks = nextBlocks; s.generation++;
     setDirty(true); onStatus('dirty'); setBlocks(nextBlocks);
-    try { sessionStorage.setItem(recoveryKey, JSON.stringify({ title: nextTitle, blocks: nextBlocks, version: s.version })); } catch { /* Server save still works if browser storage is unavailable. */ }
+    try { sessionStorage.setItem(recoveryKey, JSON.stringify({ title: nextTitle, blocks: nextBlocks, tags: s.tags, tagDraft: tagDraft.current, version: s.version })); } catch { /* Server save still works if browser storage is unavailable. */ }
     clearTimeout(timer.current); if (!s.failed) timer.current = setTimeout(() => flush().catch(() => {}), 1000);
   }
   useImperativeHandle(ref, () => ({ flush, snapshot: () => state.current, publish: async () => { const s = await flush(); const result = await post(`/api/documents/${initial.id}/publish`, { version: s.version }); return result; } }));
-  useEffect(() => { const prevent = (e) => { if (state.current.generation !== state.current.saved || uploads.current.size || document.querySelector('.website-card-editor input[aria-invalid="true"], .image-width-input[aria-invalid="true"]')) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', prevent); return () => { alive.current = false; clearTimeout(timer.current); window.removeEventListener('beforeunload', prevent); }; }, []);
+  useEffect(() => { const prevent = (e) => { if (tagDraft.current.trim() || state.current.generation !== state.current.saved || uploads.current.size || document.querySelector('.website-card-editor input[aria-invalid="true"], .image-width-input[aria-invalid="true"]')) { e.preventDefault(); e.returnValue = ''; } }; window.addEventListener('beforeunload', prevent); return () => { alive.current = false; clearTimeout(timer.current); window.removeEventListener('beforeunload', prevent); }; }, []);
   const blockType = (type, props = {}) => { const current = editor.getTextCursorPosition().block; editor.updateBlock(current, { type, props }); editor.focus(); };
   const addTable = () => { editor.insertBlocks([{ type: 'table', content: { type: 'tableContent', headerRows: 1, rows: [{ cells: ['列一', '列二', '列三'] }, { cells: ['', '', ''] }, { cells: ['', '', ''] }] } }], editor.getTextCursorPosition().block, 'after'); editor.focus(); };
   return <div className="document-layout">
-    <section className="document-column">
+    <section ref={column} className="document-column">
       {!preview && <div className="editor-toolbar" role="toolbar" aria-label="文字排版"><div className="editor-format-tools">
         <Tool label="撤销" icon={Undo2} onClick={() => editor.undo()} /><Tool label="重做" icon={Redo2} onClick={() => editor.redo()} /><span className="toolbar-divider" />
         <button className="text-tool" onClick={() => blockType('paragraph')}>正文</button><span className="toolbar-divider" />
@@ -127,11 +133,13 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
       </div>}
       {uploadCount > 0 && <div className="upload-progress" role="status"><Loader2 size={14} className="spin" />正在上传 {uploadCount} 张图片，完成后自动保存…</div>}
       {error && <div className="save-error" role="alert"><strong>草稿尚未保存</strong><p>{error}</p><div className="button-row"><button onClick={() => { state.current.failed = false; setError(''); flush().catch(() => {}); }}><RotateCcw size={15} />重新尝试</button><button onClick={() => downloadJson(`${title || '文档'}-未保存.json`, state.current)}><Download size={15} />下载当前内容</button><button onClick={() => { if (confirm('重新加载会离开当前编辑内容。请先下载副本，确定继续吗？')) { sessionStorage.removeItem(recoveryKey); location.reload(); } }}>加载最新版本</button></div></div>}
-      {recovery && <div className="recovery-banner"><p>此浏览器保留了尚未保存的编辑内容。</p><div className="button-row"><button onClick={() => { editor.replaceBlocks(editor.document, recovery.blocks); setTitle(recovery.title); changed(recovery.title, editor.document); setRecovery(null); }}>恢复内容到草稿</button><button onClick={() => downloadJson('未保存的内容.json', recovery)}>下载副本</button><button onClick={() => { sessionStorage.removeItem(recoveryKey); setRecovery(null); }}>丢弃副本</button></div></div>}
+      {recovery && <div className="recovery-banner"><p>此浏览器保留了尚未保存的编辑内容。</p><div className="button-row"><button onClick={() => { editor.replaceBlocks(editor.document, recovery.blocks); setTitle(recovery.title); state.current.tags = recovery.tags || initial.tags || []; setTags(state.current.tags); tagEditorRef.current?.restore(recovery.tagDraft || ''); changed(recovery.title, editor.document); setRecovery(null); }}>恢复内容到草稿</button><button onClick={() => downloadJson('未保存的内容.json', recovery)}>下载副本</button><button onClick={() => { sessionStorage.removeItem(recoveryKey); setRecovery(null); }}>丢弃副本</button></div></div>}
       <div className="document-paper">
-        {preview ? <><div className="preview-label">草稿预览 · 仅受邀伙伴可见</div><h1 className="document-title">{title}</h1><Reader blocks={blocks} privatePreview /></> : <>
+        <button type="button" className="term-back editor-back" onClick={onBack}><ArrowLeft size={15} />{backLabel}</button>
+        {preview ? <><div className="preview-label">草稿预览 · 仅受邀伙伴可见</div><h1 className="document-title">{title}</h1><TagList tags={tags} /><Reader blocks={blocks} privatePreview /></> : <>
           <input className="title-input" aria-label={initial.kind === 'reference' ? '词条名称' : '文档标题'} value={title} maxLength={160} placeholder="未命名文档" onChange={(e) => { setTitle(e.target.value); changed(e.target.value, editor.document); }} />
           <div className="document-byline">{initial.kind === 'reference' ? '词条正文' : initial.kind === 'folder' ? '目录说明' : '共享草稿'}<span>·</span>输入 / 插入内容，选中文字设置格式</div>
+          {initial.kind === 'reference' && <TagEditor ref={tagEditorRef} tags={tags} entries={referenceEntries} onChange={next => { state.current.tags = next; setTags(next); changed(state.current.title, editor.document); }} onPending={value => { tagDraft.current = value; const unsaved = !!value.trim() || state.current.generation !== state.current.saved; setDirty(unsaved); onStatus(unsaved ? 'dirty' : 'saved'); try { if (unsaved) sessionStorage.setItem(recoveryKey, JSON.stringify({ title: state.current.title, blocks: state.current.blocks, tags: state.current.tags, tagDraft: value, version: state.current.version })); else sessionStorage.removeItem(recoveryKey); } catch {} }} />}
           <BlockNoteView editor={editor} theme="light" onChange={() => changed(state.current.title, editor.document)} />
         </>}
       </div>

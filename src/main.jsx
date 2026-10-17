@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import './responsive.css';
+import './discovery.css';
 class ErrorBoundary extends React.Component {
   state = { error: false };
   static getDerivedStateFromError() { return { error: true }; }

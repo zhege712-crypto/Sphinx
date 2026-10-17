@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS oauth_states (
 CREATE TABLE IF NOT EXISTS documents (
   id TEXT PRIMARY KEY, title TEXT NOT NULL, parent_id TEXT,
   kind TEXT NOT NULL DEFAULT 'document', position INTEGER NOT NULL DEFAULT 0,
-  draft TEXT NOT NULL, version INTEGER NOT NULL DEFAULT 1,
+  draft TEXT NOT NULL, tags TEXT NOT NULL DEFAULT '[]', version INTEGER NOT NULL DEFAULT 1,
   published TEXT, published_version INTEGER, published_at TEXT,
   updated_at TEXT NOT NULL, updated_by TEXT NOT NULL,
   archived INTEGER NOT NULL DEFAULT 0
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS documents (
 CREATE INDEX IF NOT EXISTS document_tree ON documents(archived,parent_id,position);
 CREATE TABLE IF NOT EXISTS revisions (
   id TEXT PRIMARY KEY, document_id TEXT NOT NULL, title TEXT NOT NULL,
-  draft TEXT NOT NULL, version INTEGER NOT NULL, actor TEXT NOT NULL, created_at TEXT NOT NULL
+  draft TEXT NOT NULL, tags TEXT NOT NULL DEFAULT '[]', version INTEGER NOT NULL, actor TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS revision_document ON revisions(document_id,version DESC);
 CREATE TABLE IF NOT EXISTS assets (

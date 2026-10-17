@@ -234,3 +234,36 @@ test('网站卡片净化阻止危险协议、携带凭据与任意属性，保�
   for (const url of ['javascript:alert(1)', 'data:text/html,test', 'mailto:test@example.com', 'https://user:password@example.com/']) assert.throws(() => sanitizeDocument(card(url)));
   assert.deepEqual(sanitizeDocument(card('https://example.com/'))[0].props, { title: '资料', url: 'https://example.com/' });
 });
+
+test('标签与草稿共同保存、审核版本冲突、显式发布和历史恢复，旧客户端不清空标签', async t => {
+  const f = await fixture(t); const entry = await f.create(f.editor, { kind: 'reference' });
+  const put = (version, tags) => f.as(f.editor, `/api/documents/${entry.id}`, 'PUT', { title: '模型词条', version, blocks: blocks('可搜索的私有正文'), ...(tags === undefined ? {} : { tags }) });
+  assert.equal((await put(1, ['模型', 'ＡＩ', 'ai'])).status, 200);
+  const privateList = (await (await f.as(f.editor, '/api/documents')).json()).documents;
+  assert.deepEqual(privateList[0].tags, ['模型', 'AI']); assert.match(privateList[0].text, /私有正文/);
+  assert.equal((await f.req('/api/documents')).status, 401);
+  assert.equal((await f.as(f.editor, `/api/documents/${entry.id}/publish`, 'POST', { version: 2 })).status, 200);
+  await put(2, ['尚未公开的标签']);
+  let published = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.deepEqual(published.tags, ['模型', 'AI']);
+  assert.equal((await put(2, ['过期覆盖'])).status, 409);
+  assert.equal((await put(3)).status, 200);
+  assert.deepEqual((await (await f.as(f.editor, `/api/documents/${entry.id}`)).json()).document.tags, ['尚未公开的标签']);
+  const revisions = (await (await f.as(f.editor, `/api/documents/${entry.id}/history`)).json()).revisions;
+  const revision = revisions.find(r => r.version === 2);
+  assert.equal((await f.as(f.editor, `/api/documents/${entry.id}/restore`, 'POST', { revisionId: revision.id, version: 4 })).status, 200);
+  assert.deepEqual((await (await f.as(f.editor, `/api/documents/${entry.id}`)).json()).document.tags, ['模型', 'AI']);
+  assert.equal((await put(5, ['x'.repeat(33)])).status, 400);
+  published = (await (await f.req('/api/public/catalog')).json()).documents[0]; assert.deepEqual(published.tags, ['模型', 'AI']);
+});
+
+test('旧数据库标签迁移保留草稿、公开快照、版本和修改时间', async t => {
+  const DB = sqliteAdapter(); t.after(() => DB.close());
+  const schema = (await readFile(new URL('../server/schema.sql', import.meta.url), 'utf8')).replaceAll(", tags TEXT NOT NULL DEFAULT '[]'", '');
+  DB.exec(schema);
+  const draft = JSON.stringify(blocks('原有私有稿')); const published = JSON.stringify({ title: '原有公开稿' });
+  await DB.prepare('INSERT INTO documents(id,title,draft,published,version,updated_at,updated_by) VALUES(?,?,?,?,?,?,?)').bind('original', '原词条', draft, published, 7, 'unchanged-time', 'owner').run();
+  DB.exec(await readFile(new URL('../server/migrations/0001-reference-tags.sql', import.meta.url), 'utf8'));
+  const row = await DB.prepare('SELECT * FROM documents WHERE id=?').bind('original').first();
+  assert.equal(row.draft, draft); assert.equal(row.published, published); assert.equal(row.version, 7); assert.equal(row.updated_at, 'unchanged-time'); assert.equal(row.tags, '[]');
+});

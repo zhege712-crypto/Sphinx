@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-17T15:07:01.181Z",
+  "generatedAt": "2026-10-17T15:38:18.083Z",
   "title": "Design System: Sphinx",
   "extensions": {
     "colorMeta": {
@@ -446,7 +446,8 @@
         "body": "Keep persistent content flat; reserve elevation for menus, modal dialogs, and transient feedback.",
         "section": "elevation"
       },
-      "At widths up to 900px, use a native modal navigation drawer, 44px main touch targets, 16px document and form text, single-column terms, stacked image-text, and horizontal scrolling within toolbars and tables. At widths up to 1100px, disclose the outline above the document. Wider screens retain the desktop composition."
+      "At widths up to 900px, use a native modal navigation drawer, 44px main touch targets, 16px document and form text, single-column terms, stacked image-text, and horizontal scrolling within toolbars and tables. At widths up to 1100px, disclose the outline above the document. Wider screens retain the desktop composition.",
+      "Reference tags are neutral inline metadata authored by users, saved with drafts and history, and exposed publicly only after publication. Search includes names, tags, body and pinyin, supports multiple keywords, and ranks name matches first. Preserve the dictionary name-first layout, result snippets, selected filters and scroll on return. Site search spans guides and terms. Document-specific writer routes and source-aware return actions wait for successful saving; use internal fallbacks for direct links."
     ],
     "dos": [
       "**Do** preserve the white document, cool gray rail, blue emphasis, and quiet divider relationship.",

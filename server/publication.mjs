@@ -53,7 +53,7 @@ export async function publishedVersion(env, row) {
     totalSize += asset.size;
   }
   if (totalSize > 15 * 1024 * 1024) throw new HttpError(400, '单次发布图片总量应小于 15 MB，请压缩或拆分章节');
-  return { snapshot: { id: row.id, title: row.title, parentId: row.parent_id, position: row.position, kind: row.kind, version: row.version, updatedAt: row.updated_at, publishedAt: now(), blocks: publicBlocks(blocks, assets), text: documentText(blocks) }, assets: [...assets.values()] };
+  return { snapshot: { id: row.id, title: row.title, parentId: row.parent_id, position: row.position, kind: row.kind, version: row.version, updatedAt: row.updated_at, publishedAt: now(), blocks: publicBlocks(blocks, assets), text: documentText(blocks), tags: parse(row.tags || '[]') }, assets: [...assets.values()] };
 }
 async function applyJob(env, job) {
   // Set-based updates keep approved subtree changes and image publication below

@@ -1,4 +1,5 @@
-import { InputError, sanitizeDocument, safeTitle, emptyDocument, imageType, collectAssets } from '../shared/document.mjs';
+import { InputError, sanitizeDocument, safeTitle, emptyDocument, imageType, collectAssets, documentText } from '../shared/document.mjs';
+import { safeTags } from '../shared/tags.mjs';
 import { authRoute, authorize, session, HttpError, json, queryAll, now, recordAudit } from './auth.mjs';
 import { publicCatalog, publishedVersion, publish, reconcile } from './publication.mjs';
 import { d1Files } from './d1-files.mjs';
@@ -7,7 +8,7 @@ import { initializeReferences } from './initialize-references.mjs';
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
 const unlocked = "NOT EXISTS(SELECT 1 FROM locks WHERE name='publication' AND expires_at>?) AND NOT EXISTS(SELECT 1 FROM publication_jobs WHERE status IN ('pending','committed'))";
-const meta = (r) => ({ id: r.id, title: r.title, parentId: r.parent_id, kind: r.kind, position: r.position, version: r.version, publishedVersion: r.published_version, publishedAt: r.published_at, updatedAt: r.updated_at, updatedBy: r.updated_by });
+const meta = (r) => ({ id: r.id, title: r.title, parentId: r.parent_id, kind: r.kind, position: r.position, version: r.version, publishedVersion: r.published_version, publishedAt: r.published_at, updatedAt: r.updated_at, updatedBy: r.updated_by, tags: parse(r.tags || '[]'), text: documentText(parse(r.draft)) });
 const rowFor = async (env, id) => { const r = await env.DB.prepare('SELECT * FROM documents WHERE id=? AND archived=0').bind(id).first(); if (!r) throw new HttpError(404, '文档不存在或已被移除'); return r; };
 export const treeStamp = (rows) => JSON.stringify(rows.map((r) => [r.id, r.version, r.parent_id]).sort((a, b) => a[0].localeCompare(b[0])));
 async function writable(env) {
@@ -38,14 +39,16 @@ async function save(env, user, id, input) {
   await writable(env);
   const row = await rowFor(env, id);
   const title = safeTitle(input.title);
+  const tags = JSON.stringify(safeTags(input.tags === undefined ? parse(row.tags || '[]') : input.tags));
+  if (row.kind !== 'reference' && parse(tags).length) throw new InputError('仅 Reference 词条支持标签');
   const draft = JSON.stringify(sanitizeDocument(input.blocks));
   await assertAssets(env, parse(draft));
   if (input.version !== row.version) throw new HttpError(409, '另一位伙伴已更新这篇文档。请保留当前内容，再重新加载最新版本');
   const time = now();
   // Snapshot and compare-and-swap run in one D1 transaction. No publication may overlap a save.
   const results = await env.DB.batch([
-    env.DB.prepare(`INSERT INTO revisions(id,document_id,title,draft,version,actor,created_at) SELECT ?,id,title,draft,version,?,? FROM documents WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(crypto.randomUUID(), user.id, time, id, input.version, Date.now()),
-    env.DB.prepare(`UPDATE documents SET title=?,draft=?,version=version+1,updated_at=?,updated_by=? WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(title, draft, time, user.id, id, input.version, Date.now()),
+    env.DB.prepare(`INSERT INTO revisions(id,document_id,title,draft,tags,version,actor,created_at) SELECT ?,id,title,draft,tags,version,?,? FROM documents WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(crypto.randomUUID(), user.id, time, id, input.version, Date.now()),
+    env.DB.prepare(`UPDATE documents SET title=?,draft=?,tags=?,version=version+1,updated_at=?,updated_by=? WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(title, draft, tags, time, user.id, id, input.version, Date.now()),
   ]);
   if (!results[1].meta.changes) throw new HttpError(409, '保存时文档状态已变化，请保留内容后重新加载');
   return json({ document: { ...meta(await rowFor(env, id)), blocks: parse(draft) } });
@@ -87,7 +90,7 @@ async function route(request, env) {
     if (action === 'restore' && request.method === 'POST') {
       const input = await body(request); const revision = await env.DB.prepare('SELECT * FROM revisions WHERE document_id=? AND id=?').bind(id, input.revisionId).first();
       if (!revision) throw new HttpError(404, '历史版本不存在');
-      return save(env, user, id, { version: input.version, title: revision.title, blocks: parse(revision.draft) });
+      return save(env, user, id, { version: input.version, title: revision.title, blocks: parse(revision.draft), tags: parse(revision.tags || '[]') });
     }
     if (action === 'publish' && request.method === 'POST') {
       const input = await body(request); if (input.version !== row.version) throw new HttpError(409, '文档已更新，请先加载最新版本再发布');
