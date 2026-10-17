@@ -71,4 +71,6 @@ npx wrangler deploy
 
 ## 2026-10-17 上线记录
 
+Reference 升级为独立可编辑词条（数据库 `documents.kind='reference'`），复用已有字段，不需要改表或搬迁旧稿。先部署新 Worker，再在站主的词条索引点击“迁移原有词条”。接口 `/api/references/initialize` 仅站主可调用，使用固定 ID 且不会覆盖既有词条；只发布仍与原公开模板完全一致、版本为 1 的未编辑初稿。迁移和词条发布仍走同一 GitHub 原子提交与恢复流程。已编辑或归档的词条不会被重置。
+
 工作台为 `https://howtoagent-workspace.zhege712-872.workers.dev`，阅读站为 `https://zhege712-crypto.github.io/howtoagent/`。用户亲自配置 OAuth 和单仓库发布凭证；后端已确认两者生效。已实际验证站主 GitHub 登录、共享草稿刷新恢复、5 MiB D1 图片上传与解码、发布前匿名拒绝，以及从工作台发布到 GitHub Pages 的完整链路。测试稿经站主批准删除，正式目录保持为空，留给作者开始创作。发布凭证于 2026-11-16 到期，届时需续换。伙伴权限边界已有自动测试，尚未用第二个真人账号验收。

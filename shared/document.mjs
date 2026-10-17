@@ -12,7 +12,7 @@ export const demoDocument = () => [
   { type: 'paragraph', content: [] },
 ];
 
-const blockTypes = new Set(['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem', 'quote', 'codeBlock', 'image', 'table', 'toggleListItem', 'divider']);
+const blockTypes = new Set(['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem', 'quote', 'codeBlock', 'image', 'table', 'toggleListItem', 'divider', 'linkCard']);
 const colors = new Set(['default', 'gray', 'brown', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink']);
 const alignments = new Set(['left', 'center', 'right', 'justify']);
 export const safeTitle = (value) => {
@@ -59,7 +59,11 @@ export function sanitizeDocument(input) {
       if (block.type === 'numberedListItem' && Number.isInteger(raw.start) && raw.start > 0 && raw.start < 10000) props.start = raw.start;
       if (block.type === 'codeBlock') props.language = /^[a-z0-9+#.-]{1,35}$/i.test(raw.language ?? '') ? raw.language : 'text';
       let content;
-      if (block.type === 'image') {
+      if (block.type === 'linkCard') {
+        props.title = typeof raw.title === 'string' ? raw.title.slice(0, 160) : '';
+        props.url = raw.url ? safeLink(raw.url) : '';
+        if (props.url && !/^https?:\/\//.test(props.url)) throw new InputError('网站卡片只支持 http 或 https 链接');
+      } else if (block.type === 'image') {
         if (raw.url && !assetIdFromUrl(raw.url)) throw new InputError('请上传图片；首版不接受外部图片地址');
         props.url = raw.url || '';
         props.name = typeof raw.name === 'string' ? raw.name.slice(0, 180) : '';
@@ -95,7 +99,7 @@ export function sanitizeDocument(input) {
 
 export function documentText(blocks) {
   const text = (value) => typeof value === 'string' ? value : Array.isArray(value) ? value.map(text).join('') : value?.text ?? (value?.content ? text(value.content) : '');
-  return (blocks ?? []).map((block) => [block.type === 'table' ? block.content.rows.map((row) => row.cells.map(text).join(' ')).join('\n') : text(block.content), documentText(block.children)].filter(Boolean).join('\n')).join('\n');
+  return (blocks ?? []).map((block) => [block.type === 'table' ? block.content.rows.map((row) => row.cells.map(text).join(' ')).join('\n') : block.type === 'linkCard' ? `${block.props.title || ''} ${block.props.url || ''}` : text(block.content), documentText(block.children)].filter(Boolean).join('\n')).join('\n');
 }
 export function collectAssets(blocks) {
   const ids = new Set();

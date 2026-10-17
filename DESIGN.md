@@ -109,6 +109,10 @@ components:
     textColor: "{colors.body-ink}"
     rounded: "{rounded.floating}"
     padding: "18px 20px"
+  reference-term:
+    backgroundColor: "transparent"
+    textColor: "{colors.body-ink}"
+    padding: "9px 0"
 ---
 
 # Design System: Agent 指南
@@ -121,7 +125,7 @@ This is the user-approved Feishu-like direction A: a white document, a cool gray
 
 The interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.
 
-This document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference directory and build credits are a narrow extension of that world. It documents visual behavior; production configuration and verification are recorded separately in `docs/deployment.md`. No mobile design is established.
+This document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference dictionary, editable term pages, and build credits extend that same world. It documents visual behavior; production configuration and verification are recorded separately in `docs/deployment.md`. No mobile design is established.
 
 **Key Characteristics:**
 - White document surfaces and a cool gray navigation rail.
@@ -149,7 +153,7 @@ The palette is restrained: cool neutrals support one blue accent, with green and
 - **Metadata Gray** (`muted`): supporting labels and quiet explanations.
 - **Quiet Divider** (`divider`): regional boundaries, toolbar rules, and row separators.
 - **Control Edge** (`control-border`): the more visible outline of inputs and default buttons.
-- **Reference Surface and Edge** (`reference-surface`, `reference-border`): the closely related cool gray fill and outline used only by the website directory links.
+- **Reference Surface and Edge** (`reference-surface`, `reference-border`): the closely related cool gray fill and outline used by website cards within rich document content.
 
 **The State Has a Name Rule.** Pair color with readable text or a familiar control state; blue selection, green publication, and red review actions must remain understandable without color alone.
 
@@ -199,7 +203,7 @@ Permanent regions are flat. Background tone and one-pixel rules distinguish the 
 
 Small rounded corners are the common form language. Standard controls and search fields use the `control` radius; icon buttons and tree rows use `compact`; status labels use `status`. Floating menus and toasts use `floating`, and modal dialogs use `dialog`. Article tables and full-width management rows retain square corners and fine cell or row rules.
 
-The interface uses thin, consistent outline icons from Lucide, generally at (16–18px) with stroke width (1.7). Icons accompany text or carry accessible labels. Identity avatars are compact rounded squares. Reference directory links use a scoped rounded rectangle (7px) with a compact provider mark; they do not turn the article or management views into card shells. Avoid deriving a new pill, glass, or oversized card language from these small control corners.
+The interface uses thin, consistent outline icons from Lucide, generally at (16–18px) with stroke width (1.7). Icons accompany text or carry accessible labels. Identity avatars are compact rounded squares. Website cards within document content use a scoped rounded rectangle (7px) with a compact provider mark; the Reference index itself uses plain term links. Neither pattern turns the article or management views into card shells. Avoid deriving a new pill, glass, or oversized card language from these small control corners.
 
 ## Components
 
@@ -241,15 +245,19 @@ Native dialogs use a compact title, clear explanatory copy, and right-aligned ac
 
 Motion is limited: outline navigation scrolls smoothly, progress uses a linear spinner, and toast entry lasts (.22s). The reduced-motion query removes animations, transitions, and smooth scrolling.
 
-### Reference Directory and Build Credits
+### Reference Dictionary and Build Credits
 
-Reference appears below existing editor content and private preview, below public articles, and on the empty public homepage and empty-editor welcome screen. Public and writer sidebars also provide a dedicated Reference view; the public route is `#/reference`. Standalone and welcome-screen wrappers flex to fill available height, allow shrinking, and scroll vertically so the full list and credits remain reachable. They share a centered maximum width (1040px). The embedded directory uses a fine top rule; the standalone view removes that rule. Its title is modest (24px, weight 600).
+Reference is a dictionary of named terms with independent rich-content pages. Its index appears below ordinary document editing and private preview, below public articles, and on the empty public homepage and empty-editor welcome screen. Public and writer sidebars also provide dedicated index views at `#/reference` and `#/write/reference`. Standalone and welcome-screen wrappers flex to fill available height, allow shrinking, and scroll vertically so the full index and credits remain reachable. They share a centered maximum width (1040px). The embedded index uses a fine top rule; the standalone view removes that rule. Its title is modest (24px, weight 600).
 
-A compact search field (240px) sits beside the heading, followed by a wrapping A–Z index and an All control. Searching matches names, providers, and URLs and clears the letter filter; letter buttons filter by the entry's initial, and clicking an active letter clears it. A labeled clear button appears when the query has content. The selected filter has both a pale-blue surface and a pressed state. Empty results display a plain status message. The current directory contains twelve model, product, and provider links, sorted by name.
+A compact search field (240px, or 185px in the embedded editor index) sits beside the heading, followed by wrapping All, A–Z, and Other controls. Searching matches term names and available body text and clears the letter filter; letter buttons filter by the name's initial, and clicking an active letter clears it. Other groups names beginning with Chinese characters or other non-Latin characters. A labeled clear button appears when the query has content. The selected filter has both a pale-blue surface and a pressed state. Empty results display a plain status message.
 
-Each directory link shows a provider or product mark, a name/provider label, a URL, and an external-link arrow, with no explanatory card copy. Links use the scoped Reference Surface, its fine border, the floating radius, padding (18px 20px), a minimum height (88px), and a slightly bluer hover fill. Marks are local static SVG images (28px) inside rounded squares (48px). OpenAI, Anthropic, Claude, and DeepSeek use the four vendored Lobe Icons static SVG assets (1.95.1), with their MIT license retained in `src/assets/brands/LICENSE` and attribution in `THIRD_PARTY_NOTICES.md`. Brand marks identify the linked destination; they do not claim sponsorship or endorsement.
+The index groups plain term names by initial, with a narrow letter column (48px) and two columns of links, separated by fine horizontal rules. Terms use body-sized interface text (14px), a minimum row height (42px), square corners, and no fill. Their arrow appears on hover or keyboard focus as the text turns blue. Writer rows also show a compact textual publication state. The index does not use provider-mark website cards.
 
-Build credits are quieter (11px), with the label “网页构建支持” and OpenAI and DeepSeek links. Their SVG images shrink to (15px) inside marks (20px). Credits appear at the end of every Reference instance, including public articles and the public homepage. External links open in a new tab with the corresponding safe relationship attributes. Keep this directory-and-credit pattern additive; its gray link cards do not replace document tables or flat workspace rows.
+Each public term opens at `#/reference/:id`, with a back-to-index link, document title, rich body, right outline, and credits. The writer route `#/write/reference/:id` uses the existing editor, private draft, explicit publish, history, and deletion-review workflow. Term editing ends with a return-to-index action and credits rather than another embedded dictionary. New terms are created from the writer index using the familiar primary action and dialog.
+
+Website cards are rich-content blocks inside term pages or ordinary documents. Each shows a destination mark, a card name, a URL, and an external-link arrow, without descriptive card copy. Links use the scoped Reference Surface, its fine border, the floating radius, padding (18px 20px), a minimum height (88px), and a slightly bluer hover fill. The editor exposes card-name and URL fields; incomplete URLs show an inline message, and only valid HTTP(S) destinations render as links. Marks are local static SVG images (28px) inside rounded squares (48px), selected from the destination host; unknown destinations use an external-link icon. OpenAI, Anthropic, Claude, and DeepSeek use the four vendored Lobe Icons static SVG assets (1.95.1), with their MIT license retained in `src/assets/brands/LICENSE` and attribution in `THIRD_PARTY_NOTICES.md`. Brand marks identify the linked destination; they do not claim sponsorship or endorsement.
+
+Build credits are quieter (11px), with the label “网页构建支持” and OpenAI and DeepSeek links. Their SVG images shrink to (15px) inside marks (20px). Credits appear at the end of each dictionary index and term page. External website and credit links open in a new tab with the corresponding safe relationship attributes; term names navigate within the site. Keep the dictionary, rich-body cards, and credits inside the established document grammar.
 
 ## Do's and Don'ts
 
@@ -260,7 +268,7 @@ Build credits are quieter (11px), with the label “网页构建支持” and Op
 - **Do** use explicit words alongside publication, review, saving, and error colors.
 - **Do** retain keyboard focus, labeled icon buttons, visible upload feedback, and reduced-motion behavior.
 - **Do** extend the flat table, row, and document patterns before introducing new containers.
-- **Do** keep Reference links to names, URLs, compact marks, and external-link affordances; keep build credits visually secondary.
+- **Do** show plain term names in the Reference index; reserve name-and-URL website cards for rich page content and keep build credits visually secondary.
 
 ### Don't:
 - **Don't** introduce decorative gradients, glass, or floating card shells into the established flat document desk.

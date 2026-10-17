@@ -2,6 +2,7 @@ import { InputError, sanitizeDocument, safeTitle, emptyDocument, imageType, coll
 import { authRoute, authorize, session, HttpError, json, queryAll, now, recordAudit } from './auth.mjs';
 import { publicCatalog, publishedVersion, publish, reconcile } from './publication.mjs';
 import { d1Files } from './d1-files.mjs';
+import { initializeReferences } from './initialize-references.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
@@ -64,12 +65,13 @@ async function route(request, env) {
     return new Response(object.body, { headers: { 'Content-Type': a.mime, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': a.public_at ? 'public, max-age=3600' : 'private, no-store', 'Content-Disposition': 'inline' } });
   }
   if (!path.startsWith('/api/')) return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
-  const user = await authorize(request, env, path.startsWith('/api/members') || path === '/api/audit' || path === '/api/reconcile');
+  const user = await authorize(request, env, path.startsWith('/api/members') || path === '/api/audit' || path === '/api/reconcile' || path === '/api/references/initialize');
+  if (path === '/api/references/initialize' && request.method === 'POST') { await writable(env); return json(await initializeReferences(env, user)); }
   if (path === '/api/documents' && request.method === 'GET') return json({ documents: (await queryAll(env, 'SELECT * FROM documents WHERE archived=0 ORDER BY position,title')).map(meta) });
   if (path === '/api/documents' && request.method === 'POST') {
     await writable(env); const input = await body(request); const id = crypto.randomUUID();
     const parentId = input.parentId || null; if (parentId) await parentCheck(env, id, parentId);
-    const title = safeTitle(input.title || '未命名文档'); const kind = input.kind === 'folder' ? 'folder' : 'document';
+    const title = safeTitle(input.title || '未命名文档'); const kind = ['folder', 'reference'].includes(input.kind) ? input.kind : 'document';
     const inserted = await env.DB.prepare(`INSERT INTO documents(id,title,parent_id,kind,position,draft,updated_at,updated_by) SELECT ?,?,?,?,COALESCE(MAX(position),0)+1,?,?,? FROM documents HAVING ${unlocked} AND (? IS NULL OR EXISTS(SELECT 1 FROM documents WHERE id=? AND archived=0))`).bind(id, title, parentId, kind, JSON.stringify(emptyDocument()), now(), user.id, Date.now(), parentId, parentId).run();
     if (!inserted.meta.changes) throw new HttpError(409, '发布过程中无法新建，请稍后重试');
     await recordAudit(env, user.id, 'create', id);

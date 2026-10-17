@@ -133,3 +133,50 @@ test('生产发布只提交公开快照，拒绝强制覆盖，凭证留在服�
   const tree = JSON.parse(calls.find((c) => c.url.endsWith('git/trees')).options.body); assert.equal(tree.tree[0].path, 'public/catalog.json'); assert.ok(!tree.tree[0].content.includes('server-only-test'));
   const catalog = await (await f.req('/api/public/catalog')).json(); assert.equal(catalog.documents.length, 1); assert.ok(!JSON.stringify(catalog).includes('draft'));
 });
+
+test('Reference 词条可编辑、发布、保留私有改稿和历史，删除仍须站主审核', async t => {
+  const f = await fixture(t);
+  const entry = await f.create(f.editor, { title: 'Agent', kind: 'reference' });
+  assert.equal(entry.kind, 'reference');
+  const content = [{ type: 'paragraph', content: '我编写的词条定义' }, { type: 'linkCard', props: { title: '官方资料', url: 'https://example.com/docs' } }];
+  const saved = await (await f.as(f.editor, `/api/documents/${entry.id}`, 'PUT', { title: 'Agent', version: 1, blocks: content })).json();
+  assert.equal(saved.document.blocks[1].type, 'linkCard');
+  assert.equal((await f.as(f.editor, `/api/documents/${entry.id}/publish`, 'POST', { version: 2 })).status, 200);
+  const catalog = (await (await f.req('/api/public/catalog')).json()).documents;
+  assert.equal(catalog[0].kind, 'reference');
+  assert.equal(catalog[0].blocks[1].props.url, 'https://example.com/docs');
+  await f.as(f.editor, `/api/documents/${entry.id}`, 'PUT', { title: 'Agent 新草稿', version: 2, blocks: blocks('尚未公开的定义') });
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents[0].title, 'Agent');
+  assert.equal((await f.req(`/api/documents/${entry.id}`)).status, 401);
+  const history = await (await f.as(f.editor, `/api/documents/${entry.id}/history`)).json();
+  assert.equal(history.revisions.length, 2);
+  const review = await (await f.as(f.editor, '/api/reviews', 'POST', { action: 'delete', ids: [entry.id] })).json();
+  assert.equal((await f.as(f.editor, `/api/reviews/${review.id}/approve`, 'POST')).status, 403);
+  assert.equal((await f.as(f.owner, `/api/reviews/${review.id}/approve`, 'POST')).status, 200);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+});
+
+test('初始词条迁移仅限站主且幂等，不发布改过的草稿或覆盖用户内容', async t => {
+  const f = await fixture(t);
+  const ordinary = await f.create(f.owner, { title: '私有指南' });
+  const seedId = 'c71e0000-0000-4000-8000-000000000001';
+  await f.DB.prepare("INSERT INTO documents(id,title,kind,draft,version,updated_at,updated_by) VALUES(?,?,'reference',?,2,?,?)").bind(seedId, '我的修改', JSON.stringify(blocks('私有改稿')), new Date().toISOString(), 'local-owner').run();
+  assert.equal((await f.req('/api/references/initialize', { method: 'POST', body: {} })).status, 401);
+  assert.equal((await f.as(f.editor, '/api/references/initialize', 'POST', {})).status, 403);
+  const response = await f.as(f.owner, '/api/references/initialize', 'POST', {});
+  assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await response.json()).initialized, 11);
+  const catalog = (await (await f.req('/api/public/catalog')).json()).documents;
+  assert.equal(catalog.length, 11); assert.ok(catalog.every(d => d.kind === 'reference'));
+  assert.ok(!JSON.stringify(catalog).includes('私有改稿'));
+  const repeat = await (await f.as(f.owner, '/api/references/initialize', 'POST', {})).json();
+  assert.equal(repeat.initialized, 0);
+  assert.equal((await (await f.as(f.owner, `/api/documents/${seedId}`)).json()).document.title, '我的修改');
+  assert.equal((await (await f.as(f.owner, `/api/documents/${ordinary.id}`)).json()).document.publishedVersion, null);
+});
+
+test('网站卡片净化阻止危险协议、携带凭据与任意属性，保留正常网址', () => {
+  const card = url => [{ type: 'linkCard', props: { title: '资料', url, html: '<script>bad</script>' } }];
+  for (const url of ['javascript:alert(1)', 'data:text/html,test', 'mailto:test@example.com', 'https://user:password@example.com/']) assert.throws(() => sanitizeDocument(card(url)));
+  assert.deepEqual(sanitizeDocument(card('https://example.com/'))[0].props, { title: '资料', url: 'https://example.com/' });
+});
