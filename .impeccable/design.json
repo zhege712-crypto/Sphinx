@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-17T10:31:48.480Z",
+  "generatedAt": "2026-10-17T15:07:01.181Z",
   "title": "Design System: Sphinx",
   "extensions": {
     "colorMeta": {
@@ -288,6 +288,18 @@
       {
         "name": "wide-desktop-min",
         "value": "1450px"
+      },
+      {
+        "name": "mobile-navigation-max",
+        "value": "900px"
+      },
+      {
+        "name": "compact-outline-max",
+        "value": "1100px"
+      },
+      {
+        "name": "small-phone-max",
+        "value": "380px"
       }
     ]
   },
@@ -410,7 +422,7 @@
   ],
   "narrative": {
     "northStar": "The Familiar Document Desk",
-    "overview": "**Creative North Star: \"The Familiar Document Desk\"**\n\nThis is the user-approved Feishu-like direction A: a white document, a cool gray navigation rail, blue actions, small corners, and quiet dividers. Its character is practical, calm, and immediately recognizable to people who already write in document tools. The identity comes from the relationship between the persistent tree, the open writing surface, and the compact utility controls.\n\nThe product name is **Sphinx**, written in English in the brand and document title. “指南” names the guide content section; it is not part of the product name. The repository uses the same Sphinx name. This naming change preserves the established document-desk appearance.\n\nThe interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.\n\nThis document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference dictionary, editable term pages, and build credits extend that same world. It documents visual behavior; production configuration and verification are recorded separately in `docs/deployment.md`. No mobile design is established.",
+    "overview": "**Creative North Star: \"The Familiar Document Desk\"**\n\nThis is the user-approved Feishu-like direction A: a white document, a cool gray navigation rail, blue actions, small corners, and quiet dividers. Its character is practical, calm, and immediately recognizable to people who already write in document tools. The identity comes from the relationship between the persistent tree, the open writing surface, and the compact utility controls.\n\nThe product name is **Sphinx**, written in English in the brand and document title. “指南” names the guide content section; it is not part of the product name. The repository uses the same Sphinx name. This naming change preserves the established document-desk appearance.\n\nThe interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.\n\nThis document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference dictionary, editable term pages, and build credits extend that same world. It documents visual behavior; production configuration and verification are recorded separately in `docs/deployment.md`. Mobile and tablet layouts extend the same design; see docs/mobile.md for validation and physical-device limits.",
     "keyCharacteristics": [
       "White document surfaces and a cool gray navigation rail.",
       "Restrained blue emphasis for actions, selection, links, and keyboard focus.",
@@ -433,7 +445,8 @@
         "name": "The Flat Desk Rule",
         "body": "Keep persistent content flat; reserve elevation for menus, modal dialogs, and transient feedback.",
         "section": "elevation"
-      }
+      },
+      "At widths up to 900px, use a native modal navigation drawer, 44px main touch targets, 16px document and form text, single-column terms, stacked image-text, and horizontal scrolling within toolbars and tables. At widths up to 1100px, disclose the outline above the document. Wider screens retain the desktop composition."
     ],
     "dos": [
       "**Do** preserve the white document, cool gray rail, blue emphasis, and quiet divider relationship.",
@@ -450,7 +463,7 @@
       "**Don't** use large radii or pill shapes for ordinary controls and document rows.",
       "**Don't** give utility labels the visual weight of article headings.",
       "**Don't** replace draft, preview, publish, or review state labels with color alone.",
-      "**Don't** describe the present desktop layout as a verified mobile system or the static outline emphasis as scroll tracking.",
+      "**Don't** claim physical-device touch/keyboard verification from viewport testing, or describe static outline emphasis as scroll tracking.",
       "**Don't** automatically link other occurrences of a selected term or apply a hyperlink to a stale document range."
     ]
   }

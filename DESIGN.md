@@ -127,7 +127,7 @@ The product name is **Sphinx**, written in English in the brand and document tit
 
 The interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.
 
-This document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference dictionary, editable term pages, and build credits extend that same world. It documents visual behavior; production configuration and verification are recorded separately in `docs/deployment.md`. No mobile design is established.
+This document records the current React implementation and screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference dictionary, editable term pages, and build credits extend that same world. It documents visual behavior; production configuration and verification are recorded separately in `docs/deployment.md`. The responsive extension is documented below and in `docs/mobile.md`; physical-device keyboard and touch selection remain unverified.
 
 **Key Characteristics:**
 - White document surfaces and a cool gray navigation rail.
@@ -188,7 +188,9 @@ The editor toolbar remains sticky above the independently scrolling document and
 
 Spacing is compact around actions and navigation, generous around article headings and sections. The recorded small spacing steps are reused, but this is not a rigid modular scale: source values reflect document-specific relationships.
 
-The body has a minimum width (1120px). Existing media queries refine desktop density, not phone layouts. A sidebar toggle collapses the left rail; it does not establish a mobile drawer pattern. Preserve the desktop-only scope until mobile behavior is deliberately designed and verified.
+The body has a minimum width (320px). Up to (900px), navigation becomes a native modal drawer with a backdrop, close button, Escape dismissal, focus containment and restoration. Selecting a destination closes the drawer. Ctrl/Cmd+K opens it and focuses document search when needed. Up to (1100px), the outline becomes a disclosure above the scrolling document; selecting a heading collapses it, restores focus to its summary, and scrolls to the target. Wider screens retain the desktop rail and right outline.
+
+On phones, document titles use (28px), body and editable content (16px), and form fields (16px). Main touch controls have a minimum (44px) target. The writing header has a title row and an action row retaining save state, preview and publish. Both toolbar rows scroll horizontally. Reference names use one column and A–Z controls wrap. Side-by-side images stack above their copy without modifying stored layout. Reader tables and code, editor tables and management lists scroll within their containers. Dialogs fit the dynamic viewport and scroll internally. Safe-area insets protect navigation and bottom feedback. Screens below (380px) use (22px) document insets. See `docs/mobile.md` for viewport validation and physical-device limits.
 
 ## Elevation & Depth
 
@@ -300,5 +302,5 @@ Build credits are quieter (11px), with the label “网页构建支持” and Op
 - **Don't** use large radii or pill shapes for ordinary controls and document rows.
 - **Don't** give utility labels the visual weight of article headings.
 - **Don't** replace draft, preview, publish, or review state labels with color alone.
-- **Don't** describe the present desktop layout as a verified mobile system or the static outline emphasis as scroll tracking.
+- **Don't** claim physical-device touch/keyboard verification from viewport testing, or describe static outline emphasis as scroll tracking.
 - **Don't** automatically link other occurrences of a selected term or apply a hyperlink to a stale document range.

@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
+import { ChevronDown } from 'lucide-react';
+import useMediaQuery from './useMediaQuery';
 import { safeLink } from '../shared/document.mjs';
 import { groupLists } from '../shared/list-groups.mjs';
 import { WebsiteCard } from './WebsiteCard';
@@ -48,9 +50,14 @@ export function Reader({ blocks, privatePreview = false }) {
   })}</div>;
 }
 export function Outline({ blocks, editing = false }) {
+  const compact = useMediaQuery('(max-width: 1100px)');
+  const [expanded, setExpanded] = useState(false);
+  const summary = useRef();
   const items = headings(blocks);
-  return <aside className="outline" aria-label="本文目录"><h2>本文目录</h2>{items.length ? <nav>{items.map((item, i) => <button key={item.id || i} style={{ paddingLeft: 14 + (item.level - 1) * 12 }} onClick={() => {
+  return <aside className="outline" aria-label="本文目录"><details open={!compact || expanded} onToggle={e => { if (compact) setExpanded(e.currentTarget.open); }}><summary ref={summary} tabIndex={compact ? 0 : -1} onClick={e => { if (!compact) e.preventDefault(); }}>本文目录<ChevronDown size={16} /></summary>{items.length ? <nav>{items.map((item, i) => <button key={item.id || i} style={{ paddingLeft: 14 + (item.level - 1) * 12 }} onClick={() => {
     const target = editing ? document.querySelector(`[data-id="${CSS.escape(item.id || '')}"]`) : document.getElementById(`block-${item.id}`);
-    target?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
-  }}>{item.text || '未命名标题'}</button>)}</nav> : <p>添加标题后，<br />这里会自动生成大纲。</p>}</aside>;
+    if (compact) { setExpanded(false); summary.current?.focus({ preventScroll: true }); }
+    // Wait for the disclosure to collapse before calculating the scroll position.
+    requestAnimationFrame(() => target?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' }));
+  }}>{item.text || '未命名标题'}</button>)}</nav> : <p>添加标题后，<br />这里会自动生成大纲。</p>}</details></aside>;
 }
