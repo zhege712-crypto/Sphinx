@@ -52,3 +52,5 @@ npm audit
 BlockNote 0.56.0 社区核心（MPL-2.0），React、Vite、Mantine、Lucide。未使用 BlockNote XL 或 Docmost 企业组件，未修改 BlockNote 源码。许可与研究记录见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [选型审查](docs/open-source-review.md)。本项目自身暂未指定开放源代码许可，公开仓库不等于自动授予再分发许可。
 
 项目已更名为 Sphinx，仓库与阅读页使用新名称。现有 Worker `howtoagent-workspace` 和 D1 `howtoagent-content` 保留内部资源名，以沿用登录配置和既有数据；它们不决定产品展示名称。
+
+词汇链接：在任意编辑页选中文字，点击工具栏「词汇链接」，搜索并选择站内 Reference 词条，或填写站外 http/https 网址。再次选中已有链接或将光标放入其中，可更换目标或移除链接；保留原词汇和文字样式。只处理作者选择的文字，不自动匹配其他同名词。站内在当前阅读页打开，站外另开标签页。未发布词条会标注提示，需发布后读者才能访问。

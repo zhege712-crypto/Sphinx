@@ -3,13 +3,14 @@ import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core';
 import { zh } from '@blocknote/core/locales';
 import { createReactBlockSpec, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
-import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2, Columns2 } from 'lucide-react';
+import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2, Link, Columns2 } from 'lucide-react';
 import '@blocknote/mantine/style.css';
 import { api, post, downloadJson } from './api';
 import { Outline, Reader } from './Reader';
 import References, { BuildCredits } from './References';
 import { WebsiteCard, websiteUrl } from './WebsiteCard';
 import { imageBlock, imageTextBlock } from './ImageBlocks';
+import TermLinkDialog from './TermLinkDialog';
 const { audio, video, file, ...supported } = defaultBlockSpecs;
 function EditableWebsiteCard({ block, editor }) {
   const [url, setUrl] = useState(block.props.url);
@@ -34,6 +35,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [uploadCount, setUploadCount] = useState(0);
+  const [linkTarget, setLinkTarget] = useState(null);
   const state = useRef({ title: initial.title, blocks: initial.blocks, version: initial.version, generation: 0, saved: 0, failed: false });
   const pending = useRef(null); const timer = useRef(); const fileInput = useRef(); const alive = useRef(true);
   const imageInsertMode = useRef('image');
@@ -50,6 +52,31 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
     }
   }
   const editor = useCreateBlockNote({ schema, initialContent: initial.blocks, dictionary: zh, tables: { splitCells: false }, uploadFile: upload });
+  function openTermLink() {
+    const { selection, doc } = editor.prosemirrorState;
+    const existing = selection.empty ? editor.getLinkMarkAtPos(selection.from) : null;
+    const text = existing?.text || editor.getSelectedText();
+    if (!text.trim() || !selection.$from.parent.inlineContent || selection.$from.parent !== selection.$to.parent) { toast('请先选中一段词汇，再点击“词汇链接”', true); return; }
+    setLinkTarget({ selection, doc, text, href: existing?.href || editor.getSelectedLinkUrl() || '', position: existing ? selection.from : null });
+  }
+  function restoreLinkSelection() {
+    // Dialog focus protects the range. Refuse a stale range if an asynchronous upload changed the document.
+    if (editor.prosemirrorState.doc !== linkTarget.doc) throw new Error('正文已变化，请取消后重新选中文字再添加链接');
+    editor.transact(tr => tr.setSelection(linkTarget.selection));
+  }
+  function closeTermLink() { if (editor.prosemirrorState.doc === linkTarget.doc) editor.transact(tr => tr.setSelection(linkTarget.selection)); setLinkTarget(null); editor.focus(); }
+  function applyTermLink(href) {
+    restoreLinkSelection();
+    if (linkTarget.position !== null) editor.editLink(href, linkTarget.text, linkTarget.position);
+    else editor.createLink(href);
+    setLinkTarget(null); editor.focus();
+  }
+  function removeTermLink() {
+    restoreLinkSelection();
+    if (linkTarget.position !== null) editor.deleteLink(linkTarget.position);
+    else editor.transact(tr => tr.removeMark(linkTarget.selection.from, linkTarget.selection.to, editor.pmSchema.marks.link));
+    setLinkTarget(null); editor.focus();
+  }
   async function flush() {
     clearTimeout(timer.current);
     if (document.querySelector('.website-card-editor input[aria-invalid="true"]')) throw new Error('请先修正网站卡片中尚未保存的网址');
@@ -93,6 +120,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { imageInsertMode.current = 'image'; fileInput.current.click(); }}><ImagePlus size={16} />图片</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { imageInsertMode.current = 'imageText'; fileInput.current.click(); }}><Columns2 size={16} />图文并排</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={addTable}><Table2 size={16} />表格</button>
+        <button type="button" onMouseDown={e => e.preventDefault()} onClick={openTermLink}><Link size={16} />词汇链接</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { editor.insertBlocks([{ type: 'linkCard', props: { title: '', url: '' } }], editor.getTextCursorPosition().block, 'after'); }}><Link2 size={16} />链接卡片</button>
         </div>
         <input ref={fileInput} type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp" onChange={async (e) => { const input = e.target; const file = input.files?.[0]; if (!file) return; try { const url = await upload(file); editor.insertBlocks([{ type: imageInsertMode.current, props: { url, name: file.name }, ...(imageInsertMode.current === 'imageText' ? { children: [{ type: 'paragraph', content: [] }] } : {}) }], editor.getTextCursorPosition().block, 'after'); } catch { /* Upload reports its own actionable error. */ } input.value = ''; }} />
@@ -111,5 +139,6 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
       <div className="document-footer">{saving ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />}<span>{saving ? '正在保存…' : dirty ? '等待保存' : '草稿已保存'} · {user.login}</span></div>
     </section>
     <Outline blocks={blocks} editing={!preview} />
+    {linkTarget && <TermLinkDialog target={linkTarget} entries={referenceEntries} onApply={applyTermLink} onRemove={removeTermLink} onClose={closeTermLink} />}
   </div>;
 });

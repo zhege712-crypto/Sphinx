@@ -1,3 +1,4 @@
+import { referenceIdFromLink } from './reference-links.mjs';
 export class InputError extends Error {}
 export const emptyDocument = () => [{ type: 'paragraph', content: [] }];
 export const demoDocument = () => [
@@ -21,11 +22,12 @@ export const safeTitle = (value) => {
 };
 export function safeLink(value) {
   if (typeof value !== 'string' || value.length > 2048) throw new InputError('链接格式不正确');
+  if (referenceIdFromLink(value)) return value;
   try {
     const parsed = new URL(value);
     if (!['https:', 'http:', 'mailto:'].includes(parsed.protocol) || parsed.username || parsed.password) throw new Error();
     return parsed.href;
-  } catch { throw new InputError('链接仅支持 http、https 或 mailto'); }
+  } catch { throw new InputError('链接仅支持站内 Reference 词条、http、https 或 mailto'); }
 }
 export const assetIdFromUrl = (url) => typeof url === 'string' ? /^\/api\/assets\/([a-f0-9-]{36})$/.exec(url)?.[1] : undefined;
 

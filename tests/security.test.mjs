@@ -6,7 +6,33 @@ import worker from '../server/worker.mjs';
 import { sanitizeDocument, safeLink, imageType } from '../shared/document.mjs';
 import { hash } from '../server/auth.mjs';
 import { imageLayoutReplacement } from '../shared/image-layout.mjs';
+import { referenceHref, referenceIdFromLink } from '../shared/reference-links.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
+test('词汇链接只允许固定格式的站内词条，跨部署路径仍指向同一词条', () => {
+  const id = 'c71e0000-0000-4000-8000-000000000003'; const href = referenceHref(id);
+  assert.equal(safeLink(href), href); assert.equal(referenceIdFromLink(href), id);
+  assert.equal(new URL(href, 'https://example.github.io/Sphinx/').href, `https://example.github.io/Sphinx/${href}`);
+  assert.equal(new URL(href, 'https://workspace.example/').href, `https://workspace.example/${href}`);
+  for (const value of ['#/write', '#/reference/../../write', `#/reference/${id}?edit=1`, `//evil.example/#/reference/${id}`, `#/reference/${id}\n`, 'javascript:alert(1)']) assert.throws(() => safeLink(value));
+  assert.throws(() => referenceHref('../write'));
+  assert.equal(safeLink('https://example.com/guide'), 'https://example.com/guide');
+});
+test('指定词汇的站内外链接保留样式并随显式发布公开，不自动链接其他同名文字', async t => {
+  const f = await fixture(t); const d = await f.create();
+  const reference = await f.create(f.editor, { kind: 'reference', title: '测试词条' });
+  const href = referenceHref(reference.id);
+  const value = [{ type: 'paragraph', content: [{ type: 'link', href, content: [{ type: 'text', text: 'Claude', styles: { bold: true } }] }, { type: 'text', text: ' 与普通 Claude；', styles: {} }, { type: 'link', href: 'https://example.com/docs', content: [{ type: 'text', text: '官方资料', styles: { italic: true } }] }] }];
+  const result = await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: 1, blocks: value });
+  assert.equal(result.status, 200); const saved = (await result.json()).document;
+  assert.equal(saved.blocks[0].content[0].content[0].styles.bold, true);
+  assert.equal(saved.blocks[0].content[1].type, 'text');
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: saved.version })).status, 200);
+  const published = (await (await f.req('/api/public/catalog')).json()).documents.find(row => row.id === d.id);
+  assert.equal(published.blocks[0].content[0].href, href); assert.equal(published.blocks[0].content[2].href, 'https://example.com/docs');
+  assert.ok(published.text.includes('普通 Claude'));
+  assert.throws(() => sanitizeDocument([{ type: 'linkCard', props: { url: href } }]), /网站卡片只支持/);
+});
 test('图文排版切换保留图片和多段正文，退出并排后正文回到普通流', () => {
   const image = { id: 'img', type: 'image', props: { url: '/api/assets/c71e0000-0000-4000-8000-000000000001', name: '图', caption: '图注', previewWidth: 320 } };
   const beside = imageLayoutReplacement(image, 'image-left')[0];

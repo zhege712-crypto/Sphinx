@@ -239,7 +239,17 @@ Document management uses tables and flat full-width rows, not a card grid. Row s
 
 Editor, private preview, and reader share white paper and the same title/content hierarchy. Body paragraphs, numbered lists, bullets, nested lists, tables, code, quotes, images, and captions remain part of the reading flow. Tables have fine visible cell boundaries, subdued header fills, and horizontal overflow when needed. Images keep their aspect ratio and fit the content width. Code blocks have a neutral fill, compact corners, and their own horizontal scrolling.
 
-The toolbar's top row groups undo/redo, text style, headings, and lists with thin vertical dividers. A second row begins with the quiet label “插入” and exposes “图片”, “图文并排”, “表格”, and “链接卡片” as icon-and-text buttons (12px), rather than hiding their purpose in icons alone. Publication and preview remain in the utility header rather than inside the writing content. Private preview has an explicit amber label. Preserve that state distinction on new surfaces.
+The toolbar's top row groups undo/redo, text style, headings, and lists with thin vertical dividers. A second row begins with the quiet label “插入” and exposes “图片”, “图文并排”, “表格”, “词汇链接”, and “链接卡片” as icon-and-text buttons (12px), rather than hiding their purpose in icons alone. Publication and preview remain in the utility header rather than inside the writing content. Private preview has an explicit amber label. Preserve that state distinction on new surfaces.
+
+### Manual Term Hyperlinks
+
+The “词汇链接” action links only the author's selected words to a chosen Reference term or an external HTTP(S) URL. It never finds and links other occurrences of the same word automatically. An existing link can be edited or removed by selecting it or placing the caret inside it; applying and removing a link preserve its text and inline styles.
+
+A native modal dialog inherits the existing dialog radius, shadow, white surface, and compact actions. It shows the selected words, then two equal-width target-mode buttons: “站内 Reference” and “站外网址”. The active mode uses Selection Wash, blue text and border, and a pressed state. Reference mode focuses a labeled search field and presents plain title rows inside a fine-bordered, scrollable list (maximum height 240px). Selection uses a pale-blue row plus a checkmark; unpublished terms carry an explicit “尚未发布” badge (11px) and an access warning. External mode provides a labeled URL field and explains that the destination opens in a new tab. Apply and Cancel remain right-aligned; Remove Link, when available, sits at the left of that same action row. Validation errors appear as inline alert text.
+
+Dialog focus protects the chosen document range, and cancellation restores it when the document is unchanged. If an asynchronous change makes that range stale, application or removal is rejected with an instruction to reselect the words. Internal links use the fixed term ID in `#/reference/:id`, opening in the same tab and remaining relative to the current deployment path. External HTTP(S) links open a new tab with the safe relationship attributes. In reading, only the chosen words receive the ordinary blue, underlined link treatment; surrounding text and other matching words keep their original presentation.
+
+Finish evidence for this extension is recorded in `docs/screenshots/term-link-picker-local.png` and `docs/screenshots/term-link-reader-local.png`. The finish reviewer reported no material findings; the final production build after the autofocus adjustment and all 29 tests passed. This closeout preserves the established desktop composition and palette.
 
 ### Images and Image-Text Layouts
 
@@ -283,6 +293,7 @@ Build credits are quieter (11px), with the label “网页构建支持” and Op
 - **Do** retain keyboard focus, labeled icon buttons, visible upload feedback, and reduced-motion behavior.
 - **Do** extend the flat table, row, and document patterns before introducing new containers.
 - **Do** show plain term names in the Reference index; reserve name-and-URL website cards for rich page content and keep build credits visually secondary.
+- **Do** link only explicitly chosen words, preserve their text and styles, and keep internal term links distinct from external destinations.
 
 ### Don't:
 - **Don't** introduce decorative gradients, glass, or floating card shells into the established flat document desk.
@@ -290,3 +301,4 @@ Build credits are quieter (11px), with the label “网页构建支持” and Op
 - **Don't** give utility labels the visual weight of article headings.
 - **Don't** replace draft, preview, publish, or review state labels with color alone.
 - **Don't** describe the present desktop layout as a verified mobile system or the static outline emphasis as scroll tracking.
+- **Don't** automatically link other occurrences of a selected term or apply a hyperlink to a stale document range.

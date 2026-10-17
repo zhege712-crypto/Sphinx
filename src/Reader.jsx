@@ -7,7 +7,7 @@ export function headings(blocks) { return (blocks || []).flatMap((b) => [...(b.t
 function Inline({ value }) {
   if (typeof value === 'string') return value;
   return (value || []).map((part, i) => {
-    if (part.type === 'link') { let href; try { href = safeLink(part.href); } catch { href = undefined; } return <a key={i} href={href} rel="noopener noreferrer"><Inline value={part.content} /></a>; }
+    if (part.type === 'link') { let href; try { href = safeLink(part.href); } catch { href = undefined; } return <a key={i} href={href} target={/^https?:/.test(href || '') ? '_blank' : undefined} rel="noopener noreferrer"><Inline value={part.content} /></a>; }
     let text = part.text || '';
     if (part.styles?.code) text = <code>{text}</code>;
     if (part.styles?.bold) text = <strong>{text}</strong>;

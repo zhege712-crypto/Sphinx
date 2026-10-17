@@ -25,3 +25,5 @@
 ## Sphinx 升级（2026-10-17）
 
 仓库正式改为 Sphinx，阅读页路径 /Sphinx/，界面只展示英文。Worker 与 D1 内部名保持不变，发布目标已改为 zhege712-crypto/Sphinx。新增每篇已发布快照的 updatedAt 元数据（旧快照回退 publishedAt）；所有编辑页均有带文字的插入工具；imageText 布局块保存左右图文、多段子块与图片比例，图片发布隐私检查与普通 image 共用。
+
+词汇链接升级：任意编辑页「词汇链接」按钮为选中文字添加 Reference 目标或外部网址；可修改和移除，保持文字样式，不自动匹配全篇。shared/reference-links.mjs 集中约束固定 ID 路由，safeLink 增加严格站内允许项，Reader 在当前站点解析该 hash，外部网页另开标签。
