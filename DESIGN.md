@@ -121,7 +121,7 @@ This is the user-approved Feishu-like direction A: a white document, a cool gray
 
 The interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.
 
-This document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference directory and build credits are a narrow extension of that world. It documents visual behavior, not production readiness: authentication and Cloudflare resources still require configuration, and the present interface is a local demonstration. No mobile design is established.
+This document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference directory and build credits are a narrow extension of that world. It documents visual behavior; production configuration and verification are recorded separately in `docs/deployment.md`. No mobile design is established.
 
 **Key Characteristics:**
 - White document surfaces and a cool gray navigation rail.

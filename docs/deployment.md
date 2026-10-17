@@ -53,6 +53,8 @@ npx wrangler deploy
 
 用户在 Worker 同源页面登录与编辑，避免 GitHub Pages 和 workers.dev 跨站 cookie 限制。站主先用自己的 GitHub 登录，在“协作成员”中输入伙伴用户名，后台查询并记录稳定 ID。伙伴再通过相同入口登录。
 
+当前源码已内置正式工作台地址作为默认入口；设置 `WORKSPACE_URL` 可在未来覆盖它，首次部署不必额外配置该变量。
+
 ## 5. 上线验收
 
 1. 匿名窗口只能读到已发布快照，无法打开草稿 API 或私有图片。
@@ -64,3 +66,7 @@ npx wrangler deploy
 后续确需扩容时可以把 `FILES` 接口接入私有 R2，需站主另行决定开通；当前没有创建桶或订阅。
 
 后续购买域名后，在 Pages 配置自定义域名并按 GitHub 提供的 DNS 指引设置。创作工作台也可绑定独立子域名，届时同步更新 APP_ORIGIN 和 OAuth callback。国内访问速度以具体网络实测为准。
+
+## 2026-10-17 上线记录
+
+工作台为 `https://howtoagent-workspace.zhege712-872.workers.dev`，阅读站为 `https://zhege712-crypto.github.io/howtoagent/`。用户亲自配置 OAuth 和单仓库发布凭证；后端已确认两者生效。已实际验证站主 GitHub 登录、共享草稿刷新恢复、5 MiB D1 图片上传与解码、发布前匿名拒绝，以及从工作台发布到 GitHub Pages 的完整链路。测试稿经站主批准删除，正式目录保持为空，留给作者开始创作。发布凭证于 2026-11-16 到期，届时需续换。伙伴权限边界已有自动测试，尚未用第二个真人账号验收。
