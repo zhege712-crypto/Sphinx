@@ -1,0 +1,419 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-17T04:35:38.844Z",
+  "title": "Design System: Agent 指南",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "displayName": "Document Blue",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.22230 263.57)",
+          "oklch(26.43% 0.22230 263.57)",
+          "oklch(37.86% 0.22230 263.57)",
+          "oklch(49.29% 0.22230 263.57)",
+          "oklch(60.71% 0.22230 263.57)",
+          "oklch(72.14% 0.22230 263.57)",
+          "oklch(83.57% 0.22230 263.57)",
+          "oklch(95.00% 0.22230 263.57)"
+        ]
+      },
+      "primary-hover": {
+        "displayName": "Action Blue",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.20447 263.37)",
+          "oklch(26.43% 0.20447 263.37)",
+          "oklch(37.86% 0.20447 263.37)",
+          "oklch(49.29% 0.20447 263.37)",
+          "oklch(60.71% 0.20447 263.37)",
+          "oklch(72.14% 0.20447 263.37)",
+          "oklch(83.57% 0.20447 263.37)",
+          "oklch(95.00% 0.20447 263.37)"
+        ]
+      },
+      "ink": {
+        "displayName": "Document Ink",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.01277 258.37)",
+          "oklch(26.43% 0.01277 258.37)",
+          "oklch(37.86% 0.01277 258.37)",
+          "oklch(49.29% 0.01277 258.37)",
+          "oklch(60.71% 0.01277 258.37)",
+          "oklch(72.14% 0.01277 258.37)",
+          "oklch(83.57% 0.01277 258.37)",
+          "oklch(95.00% 0.01277 258.37)"
+        ]
+      },
+      "body-ink": {
+        "displayName": "Reading Ink",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.02168 259.39)",
+          "oklch(26.43% 0.02168 259.39)",
+          "oklch(37.86% 0.02168 259.39)",
+          "oklch(49.29% 0.02168 259.39)",
+          "oklch(60.71% 0.02168 259.39)",
+          "oklch(72.14% 0.02168 259.39)",
+          "oklch(83.57% 0.02168 259.39)",
+          "oklch(95.00% 0.02168 259.39)"
+        ]
+      },
+      "muted": {
+        "displayName": "Metadata Gray",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.02409 261.71)",
+          "oklch(26.43% 0.02409 261.71)",
+          "oklch(37.86% 0.02409 261.71)",
+          "oklch(49.29% 0.02409 261.71)",
+          "oklch(60.71% 0.02409 261.71)",
+          "oklch(72.14% 0.02409 261.71)",
+          "oklch(83.57% 0.02409 261.71)",
+          "oklch(95.00% 0.02409 261.71)"
+        ]
+      },
+      "paper": {
+        "displayName": "Document Paper",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 89.88)",
+          "oklch(26.43% 0.00000 89.88)",
+          "oklch(37.86% 0.00000 89.88)",
+          "oklch(49.29% 0.00000 89.88)",
+          "oklch(60.71% 0.00000 89.88)",
+          "oklch(72.14% 0.00000 89.88)",
+          "oklch(83.57% 0.00000 89.88)",
+          "oklch(95.00% 0.00000 89.88)"
+        ]
+      },
+      "sidebar": {
+        "displayName": "Navigation Gray",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00453 258.32)",
+          "oklch(26.43% 0.00453 258.32)",
+          "oklch(37.86% 0.00453 258.32)",
+          "oklch(49.29% 0.00453 258.32)",
+          "oklch(60.71% 0.00453 258.32)",
+          "oklch(72.14% 0.00453 258.32)",
+          "oklch(83.57% 0.00453 258.32)",
+          "oklch(95.00% 0.00453 258.32)"
+        ]
+      },
+      "divider": {
+        "displayName": "Quiet Divider",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00871 264.52)",
+          "oklch(26.43% 0.00871 264.52)",
+          "oklch(37.86% 0.00871 264.52)",
+          "oklch(49.29% 0.00871 264.52)",
+          "oklch(60.71% 0.00871 264.52)",
+          "oklch(72.14% 0.00871 264.52)",
+          "oklch(83.57% 0.00871 264.52)",
+          "oklch(95.00% 0.00871 264.52)"
+        ]
+      },
+      "control-border": {
+        "displayName": "Control Edge",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.01220 259.82)",
+          "oklch(26.43% 0.01220 259.82)",
+          "oklch(37.86% 0.01220 259.82)",
+          "oklch(49.29% 0.01220 259.82)",
+          "oklch(60.71% 0.01220 259.82)",
+          "oklch(72.14% 0.01220 259.82)",
+          "oklch(83.57% 0.01220 259.82)",
+          "oklch(95.00% 0.01220 259.82)"
+        ]
+      },
+      "selected": {
+        "displayName": "Selection Wash",
+        "role": "primary",
+        "tonalRamp": [
+          "oklch(15.00% 0.02282 266.91)",
+          "oklch(26.43% 0.02282 266.91)",
+          "oklch(37.86% 0.02282 266.91)",
+          "oklch(49.29% 0.02282 266.91)",
+          "oklch(60.71% 0.02282 266.91)",
+          "oklch(72.14% 0.02282 266.91)",
+          "oklch(83.57% 0.02282 266.91)",
+          "oklch(95.00% 0.02282 266.91)"
+        ]
+      },
+      "published-ink": {
+        "displayName": "Published Green Ink",
+        "role": "semantic",
+        "tonalRamp": [
+          "oklch(15.00% 0.09457 156.91)",
+          "oklch(26.43% 0.09457 156.91)",
+          "oklch(37.86% 0.09457 156.91)",
+          "oklch(49.29% 0.09457 156.91)",
+          "oklch(60.71% 0.09457 156.91)",
+          "oklch(72.14% 0.09457 156.91)",
+          "oklch(83.57% 0.09457 156.91)",
+          "oklch(95.00% 0.09457 156.91)"
+        ]
+      },
+      "published-bg": {
+        "displayName": "Published Green Surface",
+        "role": "semantic",
+        "tonalRamp": [
+          "oklch(15.00% 0.01338 167.17)",
+          "oklch(26.43% 0.01338 167.17)",
+          "oklch(37.86% 0.01338 167.17)",
+          "oklch(49.29% 0.01338 167.17)",
+          "oklch(60.71% 0.01338 167.17)",
+          "oklch(72.14% 0.01338 167.17)",
+          "oklch(83.57% 0.01338 167.17)",
+          "oklch(95.00% 0.01338 167.17)"
+        ]
+      },
+      "danger": {
+        "displayName": "Review Red",
+        "role": "semantic",
+        "tonalRamp": [
+          "oklch(15.00% 0.17241 23.19)",
+          "oklch(26.43% 0.17241 23.19)",
+          "oklch(37.86% 0.17241 23.19)",
+          "oklch(49.29% 0.17241 23.19)",
+          "oklch(60.71% 0.17241 23.19)",
+          "oklch(72.14% 0.17241 23.19)",
+          "oklch(83.57% 0.17241 23.19)",
+          "oklch(95.00% 0.17241 23.19)"
+        ]
+      },
+      "reference-surface": {
+        "displayName": "Reference Surface",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00287 264.54)",
+          "oklch(26.43% 0.00287 264.54)",
+          "oklch(37.86% 0.00287 264.54)",
+          "oklch(49.29% 0.00287 264.54)",
+          "oklch(60.71% 0.00287 264.54)",
+          "oklch(72.14% 0.00287 264.54)",
+          "oklch(83.57% 0.00287 264.54)",
+          "oklch(95.00% 0.00287 264.54)"
+        ]
+      },
+      "reference-border": {
+        "displayName": "Reference Edge",
+        "role": "neutral",
+        "tonalRamp": [
+          "oklch(15.00% 0.00749 260.73)",
+          "oklch(26.43% 0.00749 260.73)",
+          "oklch(37.86% 0.00749 260.73)",
+          "oklch(49.29% 0.00749 260.73)",
+          "oklch(60.71% 0.00749 260.73)",
+          "oklch(72.14% 0.00749 260.73)",
+          "oklch(83.57% 0.00749 260.73)",
+          "oklch(95.00% 0.00749 260.73)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Document Headline",
+        "purpose": "Public article title; editable titles use slightly different leading."
+      },
+      "title": {
+        "displayName": "Management Title",
+        "purpose": "Workspace section title."
+      },
+      "body": {
+        "displayName": "Reading Body",
+        "purpose": "Public article content; editor uses 1.85 leading."
+      },
+      "interface": {
+        "displayName": "Interface",
+        "purpose": "Base controls and navigation."
+      },
+      "label": {
+        "displayName": "Supporting Label",
+        "purpose": "Metadata, outline, and supporting text."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Fenced code content."
+      }
+    },
+    "shadows": [
+      {
+        "name": "menu",
+        "value": "0 6px 24px #18243a24",
+        "purpose": "Temporary floating action menu."
+      },
+      {
+        "name": "dialog",
+        "value": "0 12px 45px #18243a33",
+        "purpose": "Native modal dialog over #172b4d55 backdrop."
+      },
+      {
+        "name": "toast",
+        "value": "0 5px 24px #19253926",
+        "purpose": "Transient lower-workspace feedback."
+      }
+    ],
+    "motion": [
+      {
+        "name": "toast-entry",
+        "value": ".22s cubic-bezier(.16,1,.3,1)",
+        "purpose": "Toast entry from 6px below with blur reducing from 2px to zero."
+      },
+      {
+        "name": "progress-spin",
+        "value": "1s linear infinite",
+        "purpose": "Saving and upload spinner."
+      },
+      {
+        "name": "outline-navigation",
+        "value": "smooth",
+        "purpose": "Scroll to document headings; reduced-motion uses instant behavior."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "prefers-reduced-motion: reduce",
+        "purpose": "Disables animations, transitions, and smooth scrolling."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop-max",
+        "value": "1240px"
+      },
+      {
+        "name": "wide-desktop-min",
+        "value": "1450px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Compact blue emphasis for publishing or creation.",
+      "html": "<button class=\"ds-button-primary\" type=\"button\">发布</button>",
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:6px 13px;border:1px solid;border-radius:var(--radius,6px);font:14px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif;line-height:1.4;cursor:pointer;background:var(--blue,#3370ff);color:#fff;border-color:var(--blue,#3370ff);}.ds-button-primary:hover{background:#245bdb;border-color:#245bdb;}.ds-button-primary:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}.ds-button-primary:disabled{opacity:.5;cursor:not-allowed}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet outlined action beside the primary action.",
+      "html": "<button class=\"ds-button-secondary\" type=\"button\">预览</button>",
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:6px 13px;border:1px solid;border-radius:var(--radius,6px);font:14px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif;line-height:1.4;cursor:pointer;background:#fff;color:#303744;border-color:#d8dde5;}.ds-button-secondary:hover{background:#f1f4f9;border-color:#b8c0cc;}.ds-button-secondary:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}.ds-button-secondary:disabled{opacity:.5;cursor:not-allowed}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Submission action inside the deletion-review dialog; source retains its inherited pale hover.",
+      "html": "<button class=\"ds-button-danger\" type=\"button\">提交审核</button>",
+      "css": ".ds-button-danger{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:34px;padding:6px 13px;border:1px solid;border-radius:var(--radius,6px);font:14px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif;line-height:1.4;cursor:pointer;background:#c43c40;color:#fff;border-color:#c43c40;}.ds-button-danger:hover{background:#f1f4f9;border-color:#b8c0cc;}.ds-button-danger:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}.ds-button-danger:disabled{opacity:.5;cursor:not-allowed}"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "A compact labeled utility control; editor tools use slightly narrower dimensions.",
+      "html": "<button class=\"ds-icon-button\" type=\"button\" aria-label=\"更多操作\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"12\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"19\" cy=\"12\" r=\"1\"/></svg></button>",
+      "css": ".ds-icon-button{display:inline-flex;align-items:center;justify-content:center;padding:6px;width:32px;min-height:32px;border:0;border-radius:5px;background:transparent;color:#596272;cursor:pointer}.ds-icon-button:hover{background:#e9eef7}.ds-icon-button:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "The standard white, lightly outlined form field.",
+      "html": "<input class=\"ds-field\" aria-label=\"名称\" placeholder=\"写一个清楚的标题\" />",
+      "css": ".ds-field{min-height:36px;border:1px solid #d8dde5;border-radius:var(--radius,6px);padding:8px 10px;color:#1f2329;background:#fff;font:14px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif}.ds-field::placeholder{color:#6c7482}.ds-field:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}"
+    },
+    {
+      "name": "Workspace Navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "Active workspace row within the cool gray navigation rail.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"创作空间\"><button class=\"ds-nav-link\" type=\"button\" aria-current=\"page\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h6\"/></svg>全部文档</button></nav>",
+      "css": ".ds-nav{background:var(--sidebar,#f5f7fa);padding:12px;min-width:210px}.ds-nav-link{display:flex;align-items:center;gap:12px;width:100%;min-height:40px;padding:8px 14px;border:0;border-radius:var(--radius,6px);font:14px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif;text-align:left;color:#245bdb;background:#e8efff;cursor:pointer}.ds-nav-link:hover{background:#e9edf4}.ds-nav-link:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}"
+    },
+    {
+      "name": "Draft Status",
+      "kind": "chip",
+      "refersTo": "status-draft",
+      "description": "Neutral textual status for drafts and unpublished changes.",
+      "html": "<span class=\"ds-status-draft\">有未发布修改</span>",
+      "css": ".ds-status-draft{display:inline-flex;white-space:nowrap;font:11px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif;line-height:1.5;color:#646d7d;background:#f1f3f7;border-radius:4px;padding:3px 7px}"
+    },
+    {
+      "name": "Published Status",
+      "kind": "chip",
+      "refersTo": "status-published",
+      "description": "Publication state with readable text and a subdued green surface.",
+      "html": "<span class=\"ds-status-published\">已发布</span>",
+      "css": ".ds-status-published{display:inline-flex;white-space:nowrap;font:11px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif;line-height:1.5;color:#28704a;background:#e9f4ef;border-radius:4px;padding:3px 7px}"
+    },
+    {
+      "name": "Reference Website Card",
+      "kind": "card",
+      "refersTo": "reference-card",
+      "description": "A scoped directory link showing only a compact mark, name/provider, URL, and external-link affordance.",
+      "html": "<a class=\"ds-reference-card\" href=\"https://chatgpt.com/\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"ds-reference-mark\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"25\" height=\"25\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z\"/></svg></span><span class=\"ds-reference-copy\"><strong>ChatGPT · OpenAI</strong><small>https://chatgpt.com/</small></span><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M7 17 17 7M7 7h10v10\"/></svg></a>",
+      "css": ".ds-reference-card{display:flex;align-items:center;gap:18px;padding:18px 20px;background:#f5f6f8;border:1px solid #e5e8ed;border-radius:7px;color:#303742;text-decoration:none;font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif}.ds-reference-card:hover{background:#edf2fa}.ds-reference-mark{width:48px;height:48px;display:inline-flex;align-items:center;justify-content:center;border-radius:7px;flex-shrink:0;background:#e6ebf3;color:#41546c}.ds-reference-copy{flex:1;min-width:0}.ds-reference-copy strong{display:block;font-size:15px;font-weight:600}.ds-reference-copy small{display:block;margin-top:5px;font-size:12px;color:#68758a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ds-reference-card:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}"
+    },
+    {
+      "name": "Build Credits",
+      "kind": "custom",
+      "description": "Quiet OpenAI and DeepSeek links at the end of Reference and public reader footers; symbols are generic interface marks.",
+      "html": "<div class=\"ds-credits\"><span>网页构建支持</span><a class=\"ds-credit-link\" href=\"https://openai.com/\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"ds-credit-mark\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"25\" height=\"25\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z\"/></svg></span>OpenAI</a><a class=\"ds-credit-link\" href=\"https://www.deepseek.com/\" target=\"_blank\" rel=\"noopener noreferrer\"><span class=\"ds-credit-mark ds-credit-deepseek\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2 6c2-2 4 2 6 0s4-2 6 0 4 2 8 0M2 12c2-2 4 2 6 0s4-2 6 0 4 2 8 0M2 18c2-2 4 2 6 0s4-2 6 0 4 2 8 0\"/></svg></span>DeepSeek</a></div>",
+      "css": ".ds-credits{display:flex;align-items:center;gap:16px;margin-top:28px;color:#687385;font:11px -apple-system,BlinkMacSystemFont,\"Segoe UI\",\"PingFang SC\",\"Hiragino Sans GB\",\"Microsoft YaHei\",sans-serif}.ds-credit-link{display:inline-flex;align-items:center;gap:6px;color:#687385;text-decoration:none}.ds-credit-mark{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:4px;background:#e6ebf3;color:#41546c}.ds-credit-mark svg{width:14px;height:14px}.ds-credit-deepseek{color:#3766d6;background:#e7edff}.ds-credit-link:focus-visible{outline:2px solid var(--blue,#3370ff);outline-offset:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Familiar Document Desk",
+    "overview": "**Creative North Star: \"The Familiar Document Desk\"**\n\nThis is the user-approved Feishu-like direction A: a white document, a cool gray navigation rail, blue actions, small corners, and quiet dividers. Its character is practical, calm, and immediately recognizable to people who already write in document tools. The identity comes from the relationship between the persistent tree, the open writing surface, and the compact utility controls.\n\nThe interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.\n\nThis document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference directory and build credits are a narrow extension of that world. It documents visual behavior, not production readiness: authentication and Cloudflare resources still require configuration, and the present interface is a local demonstration. No mobile design is established.",
+    "keyCharacteristics": [
+      "White document surfaces and a cool gray navigation rail.",
+      "Restrained blue emphasis for actions, selection, links, and keyboard focus.",
+      "Compact controls surrounding a spacious, readable document.",
+      "Flat regions divided by fine lines; shadows reserved for floating feedback and dialogs.",
+      "One Chinese-capable system font stack across writing and reading."
+    ],
+    "rules": [
+      {
+        "name": "The State Has a Name Rule",
+        "body": "Pair color with readable text or a familiar control state; blue selection, green publication, and red review actions must remain understandable without color alone.",
+        "section": "colors"
+      },
+      {
+        "name": "The Document Leads Rule",
+        "body": "Preserve the size difference between article content and surrounding utility labels; new chrome must not compete with the document title.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Desk Rule",
+        "body": "Keep persistent content flat; reserve elevation for menus, modal dialogs, and transient feedback.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** preserve the white document, cool gray rail, blue emphasis, and quiet divider relationship.",
+      "**Do** keep writing, preview, and reading typography consistent while labeling their different states.",
+      "**Do** preserve the fixed desktop navigation and flexible document column, including the implemented wide-screen outline adjustment.",
+      "**Do** use explicit words alongside publication, review, saving, and error colors.",
+      "**Do** retain keyboard focus, labeled icon buttons, visible upload feedback, and reduced-motion behavior.",
+      "**Do** extend the flat table, row, and document patterns before introducing new containers.",
+      "**Do** keep Reference links to names, URLs, compact marks, and external-link affordances; keep build credits visually secondary."
+    ],
+    "donts": [
+      "**Don't** introduce decorative gradients, glass, or floating card shells into the established flat document desk.",
+      "**Don't** use large radii or pill shapes for ordinary controls and document rows.",
+      "**Don't** give utility labels the visual weight of article headings.",
+      "**Don't** replace draft, preview, publish, or review state labels with color alone.",
+      "**Don't** describe the present desktop layout as a verified mobile system or the static outline emphasis as scroll tracking."
+    ]
+  }
+}

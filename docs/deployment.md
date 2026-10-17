@@ -10,14 +10,15 @@
 
 ## 2. Cloudflare 创作工作台
 
-需要 Cloudflare Workers、D1 与 R2 可用账户。在当前项目目录使用官方 Wrangler CLI（`npx wrangler`）登录 Cloudflare，然后创建全新资源：
+首版使用 Cloudflare Workers 与 D1。按站主选择，图片也保存在独立 D1 中，不开通 R2 订阅。在当前项目目录使用已固定版本的 Wrangler CLI（`npx wrangler`）登录 Cloudflare，然后创建全新资源：
 
 ```powershell
 npx wrangler d1 create howtoagent-content
-npx wrangler r2 bucket create howtoagent-private-assets
 ```
 
-将新 D1 ID 填入 `wrangler.jsonc`，核对桶名称。R2 不开启公开桶或公开自定义域名，图片通过 API 权限校验后返回。
+将新 D1 ID 填入 `wrangler.jsonc`。私有图片分块写入 `file_objects` / `file_chunks`，每块 256 KiB，单张仍限 5 MiB，首版图片预算 256 MiB。图片只通过带授权校验的 API 返回，不进入公开仓库，直到明确发布。
+
+当前项目已创建独立数据库 `howtoagent-content`。执行下面的幂等建表语句不会修改旧站数据库。
 
 ```powershell
 npx wrangler d1 execute howtoagent-content --remote --file=server/schema.sql
@@ -29,7 +30,7 @@ npx wrangler d1 execute howtoagent-content --remote --file=server/schema.sql
 
 在 GitHub Developer settings 新建 OAuth App，Homepage URL 为工作台 URL，Authorization callback URL 为 `https://实际工作台地址/auth/callback`。它只申请 `read:user`，不依赖伙伴授予仓库写权限。
 
-通过 Wrangler secrets 设置新 App 的 ID 和密钥：
+推荐运行 `npm run configure:workspace`，打开 `http://127.0.0.1:8977`，亲自填入 Client ID 和 Client secret。它仅监听本机，校验来源与一次性运行 nonce，经官方 Wrangler 的标准输入写入本项目 Worker Secrets；关闭 Wrangler 磁盘日志，不生成密钥文件，也不会向页面反射密钥。页面运行一小时后失效。不要把密钥发到聊天、提交到仓库或截图。也可以直接使用官方命令：
 
 ```powershell
 npx wrangler secret put GITHUB_CLIENT_ID
@@ -58,6 +59,8 @@ npx wrangler deploy
 2. 受邀伙伴能保存、上传、发布，不能管理成员或批准审核。
 3. 站主可处理删除和批量移动；申请后文档发生变化时拒绝过期批准。
 4. 发布后确认 GitHub commit 和 Pages Actions 运行成功，阅读 URL 显示新版本。
-5. 测试停用伙伴会撤销已有会话；检查 D1/R2 备份和 Cloudflare 配额告警。
+5. 测试停用伙伴会撤销已有会话；检查 D1 备份、图片预算及 Cloudflare 配额告警。
+
+后续确需扩容时可以把 `FILES` 接口接入私有 R2，需站主另行决定开通；当前没有创建桶或订阅。
 
 后续购买域名后，在 Pages 配置自定义域名并按 GitHub 提供的 DNS 指引设置。创作工作台也可绑定独立子域名，届时同步更新 APP_ORIGIN 和 OAuth callback。国内访问速度以具体网络实测为准。

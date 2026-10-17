@@ -3,6 +3,7 @@ import { BookOpenText, FileText, Folder, ChevronDown, ChevronRight, Search, Plus
 import { api, post, setCsrf, downloadJson } from './api';
 import { Reader, Outline } from './Reader';
 import { BuildCredits } from './References';
+import { workspaceUrl } from './site-config';
 const Editor = lazy(() => import('./Editor'));
 const date = (value) => value ? new Date(value).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—';
 const Status = ({ doc }) => <span className={`status-tag ${doc.publishedVersion === doc.version ? 'published' : ''}`}>{!doc.publishedVersion ? '草稿' : doc.publishedVersion === doc.version ? '已发布' : '有未发布修改'}</span>;
@@ -23,7 +24,7 @@ function Login({ session, hasBackend, login, toast }) {
   return <main className="login-page"><BookOpenText size={34} className="brand-icon" /><h1>一起把经验写下来</h1><p>受邀创作伙伴可管理文章、目录和图片。<br />登录后从共享草稿开始。</p>
     {session.githubConfigured ? <a className="primary button" href="/auth/github">使用 GitHub 登录<ArrowUpRight size={17} /></a> : <div className="notice">{hasBackend ? '正式 GitHub 登录尚未配置。' : '当前是公开阅读站，创作工作台尚未连接。'}</div>}
     {session.localDemo && <div className="local-login"><strong>本地演示</strong><p>仅在本机模拟角色，用于试用编辑与审核。</p><div className="button-row"><button onClick={() => login('owner')}>以站主身份体验</button><button onClick={() => login('editor')}>以伙伴身份体验</button></div></div>}
-    {!hasBackend && import.meta.env.VITE_WORKSPACE_URL && <a className="primary button" href={import.meta.env.VITE_WORKSPACE_URL}>打开伙伴工作台<ExternalLink size={16} /></a>}
+    {!hasBackend && workspaceUrl && <a className="primary button" href={workspaceUrl}>打开伙伴工作台<ExternalLink size={16} /></a>}
     <a className="quiet-link" href="#/read"><ArrowLeft size={15} />返回阅读站</a>
   </main>;
 }
@@ -48,7 +49,7 @@ export default function App() {
   async function refreshReviews() { const r = await api('/api/reviews'); setReviews(r.reviews); }
   useEffect(() => {
     if (booting) return;
-    if (writing && session.user) { refreshDocs().then((list) => { if (list.length && !current) openDocument(list.find((d) => d.kind !== 'folder')?.id || list[0].id, false); }).catch((e) => setLoadError(e.message)); refreshReviews().catch(() => {}); }
+    if (writing && session.user) { refreshDocs().then((list) => { if (list.length && (!doc || doc.id !== current)) openDocument(list.some((d) => d.id === current) ? current : list.find((d) => d.kind !== 'folder')?.id || list[0].id, false); }).catch((e) => setLoadError(e.message)); refreshReviews().catch(() => {}); }
     else if (!writing) loadPublic().then((list) => { const requested = decodeURIComponent(route.split('/')[2] || ''); setCurrent(list.some((d) => d.id === requested) ? requested : list.find((d) => d.kind !== 'folder')?.id || list[0]?.id || null); });
   }, [booting, writing, session.user?.id, hasBackend, route]);
   async function run(work) { if (busy) return; setBusy(true); try { await work(); } catch (e) { toast(e.message, true); } finally { setBusy(false); } }
@@ -79,7 +80,7 @@ export default function App() {
         <Tree docs={activeDocs} current={current} query={query} select={(id) => writing ? run(() => openDocument(id)) : (location.hash = `/read/${id}`)} />
         {!activeDocs.length && <p className="sidebar-empty">{writing ? '还没有文档，点击 + 开始创作。' : '作者正在准备第一篇指南。'}</p>}
       </div>
-      <div className="sidebar-bottom">{writing ? <><div className="user-info"><span className="avatar">{session.user.login.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.login}</strong><small>{isOwner ? '站主' : '创作伙伴'}{session.localDemo ? ' · 本地演示' : ''}</small></div><IconButton label="退出登录" icon={LogOut} onClick={logout} disabled={busy} /></div>{isOwner && <button className="settings-link" onClick={() => navigate('settings')}><Settings2 size={15} />发布与操作记录</button>}</> : <a className="partner-link" href={import.meta.env.VITE_WORKSPACE_URL || '#/write'}>创作伙伴入口<ArrowUpRight size={17} /></a>}</div>
+      <div className="sidebar-bottom">{writing ? <><div className="user-info"><span className="avatar">{session.user.login.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.login}</strong><small>{isOwner ? '站主' : '创作伙伴'}{session.localDemo ? ' · 本地演示' : ''}</small></div><IconButton label="退出登录" icon={LogOut} onClick={logout} disabled={busy} /></div>{isOwner && <button className="settings-link" onClick={() => navigate('settings')}><Settings2 size={15} />发布与操作记录</button>}</> : <a className="partner-link" href={hasBackend ? '#/write' : workspaceUrl}>创作伙伴入口<ArrowUpRight size={17} /></a>}</div>
     </aside>
     <main className="main-shell">
       <header className="topbar"><div className="breadcrumb"><IconButton label={sideOpen ? '收起侧栏' : '展开侧栏'} icon={sideOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => setSideOpen(!sideOpen)} /><span>{writing ? '创作空间' : '指南'}</span><span className="path-divider">/</span><strong>{writing ? view === 'editor' ? doc?.title || '开始创作' : ({ home: '工作台', documents: '全部文档', reviews: '待审核', members: '协作成员', assets: '图片库', settings: '发布与操作记录' })[view] : publicDoc?.title || '欢迎阅读'}</strong></div>

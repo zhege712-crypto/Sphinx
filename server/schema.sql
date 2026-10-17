@@ -29,6 +29,14 @@ CREATE TABLE IF NOT EXISTS assets (
   id TEXT PRIMARY KEY, mime TEXT NOT NULL, extension TEXT NOT NULL,
   size INTEGER NOT NULL, created_at TEXT NOT NULL, actor TEXT NOT NULL, public_at TEXT
 );
+CREATE TABLE IF NOT EXISTS file_objects (
+  id TEXT PRIMARY KEY, size INTEGER NOT NULL, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS file_chunks (
+  object_id TEXT NOT NULL REFERENCES file_objects(id) ON DELETE CASCADE,
+  part INTEGER NOT NULL, data BLOB NOT NULL,
+  PRIMARY KEY(object_id,part)
+);
 CREATE TABLE IF NOT EXISTS reviews (
   id TEXT PRIMARY KEY, action TEXT NOT NULL, payload TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending', actor TEXT NOT NULL,

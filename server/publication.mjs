@@ -45,8 +45,9 @@ export async function publishedVersion(env, row) {
   if (assetIds.length > 20) throw new HttpError(400, '单篇文档最多发布 20 张图片，请拆分章节');
   const assets = new Map();
   let totalSize = 0;
+  const records = assetIds.length ? await queryAll(env, 'SELECT * FROM assets WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(assetIds)) : [];
   for (const id of assetIds) {
-    const asset = await env.DB.prepare('SELECT * FROM assets WHERE id=?').bind(id).first();
+    const asset = records.find((record) => record.id === id);
     if (!asset) throw new HttpError(409, '引用的图片不存在，请移除后重新上传');
     assets.set(id, asset);
     totalSize += asset.size;
@@ -55,17 +56,14 @@ export async function publishedVersion(env, row) {
   return { snapshot: { id: row.id, title: row.title, parentId: row.parent_id, position: row.position, kind: row.kind, version: row.version, publishedAt: now(), blocks: publicBlocks(blocks, assets), text: documentText(blocks) }, assets: [...assets.values()] };
 }
 async function applyJob(env, job) {
-  const delta = parse(job.delta);
-  const ids = parse(job.asset_ids);
-  const statements = [];
-  for (const entry of delta) {
-    if (entry.remove) statements.push(env.DB.prepare('UPDATE documents SET archived=1,published=NULL WHERE id=?').bind(entry.id));
-    else {
-      if (entry.move) statements.push(env.DB.prepare('UPDATE documents SET parent_id=?,position=?,version=version+1,updated_at=? WHERE id=?').bind(entry.move.parentId, entry.move.position, now(), entry.id));
-      if (entry.snapshot) statements.push(env.DB.prepare('UPDATE documents SET published=?,published_version=?,published_at=? WHERE id=?').bind(JSON.stringify(entry.snapshot), entry.snapshot.version, entry.snapshot.publishedAt, entry.id));
-    }
-  }
-  for (const id of ids) statements.push(env.DB.prepare('UPDATE assets SET public_at=COALESCE(public_at,?) WHERE id=?').bind(now(), id));
+  // Set-based updates keep approved subtree changes and image publication below
+  // the D1 Free per-invocation query limit, including large approved batches.
+  const statements = [
+    env.DB.prepare("UPDATE documents SET archived=1,published=NULL WHERE id IN (SELECT json_extract(value,'$.id') FROM json_each(?) WHERE json_extract(value,'$.remove')=1)").bind(job.delta),
+    env.DB.prepare("UPDATE documents SET parent_id=json_extract(item.value,'$.move.parentId'),position=json_extract(item.value,'$.move.position'),version=version+1,updated_at=? FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.move')='object'").bind(now(), job.delta),
+    env.DB.prepare("UPDATE documents SET published=json_extract(item.value,'$.snapshot'),published_version=json_extract(item.value,'$.snapshot.version'),published_at=json_extract(item.value,'$.snapshot.publishedAt') FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.snapshot')='object'").bind(job.delta),
+    env.DB.prepare('UPDATE assets SET public_at=COALESCE(public_at,?) WHERE id IN (SELECT value FROM json_each(?))').bind(now(), job.asset_ids),
+  ];
   if (job.review_id) statements.push(env.DB.prepare("UPDATE reviews SET status='approved',resolved_at=? WHERE id=?").bind(now(), job.review_id));
   statements.push(env.DB.prepare("UPDATE publication_jobs SET status='complete',updated_at=? WHERE id=?").bind(now(), job.id));
   await env.DB.batch(statements);
@@ -85,8 +83,9 @@ export async function publish(env, actor, delta, assets = [], reviewId = null) {
       const stamp = JSON.stringify(rows.map((r) => [r.id, r.version, r.parent_id]).sort((a, b) => a[0].localeCompare(b[0])));
       if (!review || parse(review.payload).tree !== stamp) throw new HttpError(409, '审核内容已变化，请重新提交申请');
     }
+    const currentRows = await queryAll(env, 'SELECT id,version,archived FROM documents WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(delta.map((entry) => entry.id)));
     for (const entry of delta) {
-      const row = await env.DB.prepare('SELECT version,archived FROM documents WHERE id=?').bind(entry.id).first();
+      const row = currentRows.find((candidate) => candidate.id === entry.id);
       if (!row || row.archived || row.version !== entry.expectedVersion) throw new HttpError(409, '文档已发生变化，请刷新后重新操作');
     }
     const catalog = await publicCatalog(env);

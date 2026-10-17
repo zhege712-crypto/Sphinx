@@ -15,6 +15,8 @@ colors:
   published-ink: "#28704a"
   published-bg: "#e9f4ef"
   danger: "#c43c40"
+  reference-surface: "#f5f6f8"
+  reference-border: "#e5e8ed"
 typography:
   headline:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif'
@@ -102,6 +104,11 @@ components:
     textColor: "{colors.published-ink}"
     rounded: "{rounded.status}"
     padding: "3px 7px"
+  reference-card:
+    backgroundColor: "{colors.reference-surface}"
+    textColor: "{colors.body-ink}"
+    rounded: "{rounded.floating}"
+    padding: "18px 20px"
 ---
 
 # Design System: Agent 指南
@@ -114,7 +121,7 @@ This is the user-approved Feishu-like direction A: a white document, a cool gray
 
 The interface supports sustained writing and reading. Navigation and metadata use compact type; document titles and generous paragraph leading establish the reading hierarchy. Editing, private preview, and public reading share the same document material. Status labels make draft and publication state visible, while the publish action carries the strongest blue emphasis.
 
-This document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the finish review. It documents visual behavior, not production readiness: authentication and Cloudflare resources still require configuration, and the present interface is a local demonstration. No mobile design is established.
+This document records the current React implementation and the desktop screenshots in `docs/screenshots/`, after the core interface finish review. The later Reference directory and build credits are a narrow extension of that world. It documents visual behavior, not production readiness: authentication and Cloudflare resources still require configuration, and the present interface is a local demonstration. No mobile design is established.
 
 **Key Characteristics:**
 - White document surfaces and a cool gray navigation rail.
@@ -142,6 +149,7 @@ The palette is restrained: cool neutrals support one blue accent, with green and
 - **Metadata Gray** (`muted`): supporting labels and quiet explanations.
 - **Quiet Divider** (`divider`): regional boundaries, toolbar rules, and row separators.
 - **Control Edge** (`control-border`): the more visible outline of inputs and default buttons.
+- **Reference Surface and Edge** (`reference-surface`, `reference-border`): the closely related cool gray fill and outline used only by the website directory links.
 
 **The State Has a Name Rule.** Pair color with readable text or a familiar control state; blue selection, green publication, and red review actions must remain understandable without color alone.
 
@@ -191,7 +199,7 @@ Permanent regions are flat. Background tone and one-pixel rules distinguish the 
 
 Small rounded corners are the common form language. Standard controls and search fields use the `control` radius; icon buttons and tree rows use `compact`; status labels use `status`. Floating menus and toasts use `floating`, and modal dialogs use `dialog`. Article tables and full-width management rows retain square corners and fine cell or row rules.
 
-The interface uses thin, consistent outline icons from Lucide, generally at (16–18px) with stroke width (1.7). Icons accompany text or carry accessible labels. Identity avatars are compact rounded squares. Avoid deriving a new pill, glass, or oversized card language from these small control corners.
+The interface uses thin, consistent outline icons from Lucide, generally at (16–18px) with stroke width (1.7). Icons accompany text or carry accessible labels. Identity avatars are compact rounded squares. Reference directory links use a scoped rounded rectangle (7px) with a compact provider mark; they do not turn the article or management views into card shells. Avoid deriving a new pill, glass, or oversized card language from these small control corners.
 
 ## Components
 
@@ -233,6 +241,14 @@ Native dialogs use a compact title, clear explanatory copy, and right-aligned ac
 
 Motion is limited: outline navigation scrolls smoothly, progress uses a linear spinner, and toast entry lasts (.22s). The reduced-motion query removes animations, transitions, and smooth scrolling.
 
+### Reference Directory and Build Credits
+
+Reference appears after the editor content and in private preview, separated by a fine top rule. Its title is modest (24px, weight 600). A compact search field sits beside it, followed by a wrapping A–Z index and an All control. Searching clears the letter filter; letter buttons filter by the entry's initial, and clicking an active letter clears it. Empty results display a plain status message.
+
+Each directory link shows a provider mark, a name/provider label, a URL, and an external-link arrow, with no explanatory card copy. Links use the scoped Reference Surface, its fine border, the floating radius, padding (18px 20px), and a slightly bluer hover fill. Provider marks are (48px) rounded squares. OpenAI and DeepSeek use generic outline symbols; Anthropic uses a letter. These are interface identifiers, not official logo assets.
+
+Build credits are quieter (11px), with the label “网页构建支持” and OpenAI and DeepSeek links. Their marks shrink to (20px), with (14px) symbols. Credits appear at the end of Reference and in public-reader footers. External links open in a new tab with the corresponding safe relationship attributes. Keep this directory-and-credit pattern additive; its gray link cards do not replace document tables or flat workspace rows.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -242,6 +258,7 @@ Motion is limited: outline navigation scrolls smoothly, progress uses a linear s
 - **Do** use explicit words alongside publication, review, saving, and error colors.
 - **Do** retain keyboard focus, labeled icon buttons, visible upload feedback, and reduced-motion behavior.
 - **Do** extend the flat table, row, and document patterns before introducing new containers.
+- **Do** keep Reference links to names, URLs, compact marks, and external-link affordances; keep build credits visually secondary.
 
 ### Don't:
 - **Don't** introduce decorative gradients, glass, or floating card shells into the established flat document desk.

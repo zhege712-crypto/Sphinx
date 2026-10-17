@@ -1,6 +1,7 @@
 import { InputError, sanitizeDocument, safeTitle, emptyDocument, imageType, collectAssets } from '../shared/document.mjs';
 import { authRoute, authorize, session, HttpError, json, queryAll, now, recordAudit } from './auth.mjs';
 import { publicCatalog, publishedVersion, publish, reconcile } from './publication.mjs';
+import { d1Files } from './d1-files.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
@@ -24,7 +25,14 @@ async function parentCheck(env, id, parentId) {
   let current = parentId; const seen = new Set([id]);
   for (let depth = 0; current; depth++) { if (depth > 12 || seen.has(current)) throw new HttpError(400, '目录不能循环嵌套，最多支持 12 层'); seen.add(current); current = (await rowFor(env, current)).parent_id; }
 }
-async function assertAssets(env, blocks) { for (const id of collectAssets(blocks)) if (!await env.DB.prepare('SELECT id FROM assets WHERE id=?').bind(id).first()) throw new HttpError(400, '图片不存在，请重新上传'); }
+async function assertAssets(env, blocks) {
+  const ids = collectAssets(blocks);
+  if (ids.length > 20) throw new HttpError(400, '单篇文档最多使用 20 张图片，请拆分章节');
+  if (ids.length) {
+    const found = await queryAll(env, 'SELECT id FROM assets WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(ids));
+    if (found.length !== ids.length) throw new HttpError(400, '图片不存在，请重新上传');
+  }
+}
 async function save(env, user, id, input) {
   await writable(env);
   const row = await rowFor(env, id);
@@ -93,7 +101,8 @@ async function route(request, env) {
     const totals = await env.DB.prepare('SELECT count(*) AS count,COALESCE(sum(size),0) AS size FROM assets WHERE actor=? AND created_at>?').bind(user.id, new Date(Date.now() - 86400000).toISOString()).first();
     if (totals.count >= 100 || totals.size + data.byteLength > 100 * 1024 * 1024) throw new HttpError(429, '今天的图片上传已达到上限，请稍后继续');
     await env.FILES.put(id, data, { httpMetadata: { contentType: type.mime } });
-    await env.DB.prepare('INSERT INTO assets(id,mime,extension,size,created_at,actor) VALUES(?,?,?,?,?,?)').bind(id, type.mime, type.extension, data.byteLength, now(), user.id).run();
+    try { await env.DB.prepare('INSERT INTO assets(id,mime,extension,size,created_at,actor) VALUES(?,?,?,?,?,?)').bind(id, type.mime, type.extension, data.byteLength, now(), user.id).run(); }
+    catch (error) { if (env.FILES.delete) await env.FILES.delete(id); throw error; }
     return json({ url: `/api/assets/${id}`, id }, 201);
   }
   if (path === '/api/assets' && request.method === 'GET') return json({ assets: await queryAll(env, 'SELECT * FROM assets ORDER BY created_at DESC LIMIT 200') });
@@ -151,6 +160,7 @@ async function route(request, env) {
 export default {
   async fetch(request, env) {
     try {
+      env = { ...env, FILES: env.FILES || d1Files(env.DB) };
       const response = await route(request, env);
       const headers = new Headers(response.headers);
       headers.set('X-Content-Type-Options', 'nosniff'); headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

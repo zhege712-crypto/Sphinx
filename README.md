@@ -21,7 +21,7 @@ npm run dev
 - 保存与发布分离：私有共享草稿只供受邀成员访问，显式发布后才更新阅读站。
 - 伙伴管理全部内容并发布普通文章；删除及批量目录调整提交站主审核。
 - GitHub OAuth 登录、稳定 GitHub ID 邀请、成员停用与会话撤销、操作记录。
-- GitHub Pages 发布公开阅读站；Cloudflare Workers + D1 + 私有 R2 承载创作工作台。
+- GitHub Pages 发布公开阅读站；Cloudflare Workers + D1 承载创作工作台与私有图片。首版不启用 R2 订阅。
 
 正式 GitHub OAuth、线上内容发布及伙伴共享使用，需要先完成独立后端配置。仅部署 GitHub Pages 不会启用私有工作台。
 

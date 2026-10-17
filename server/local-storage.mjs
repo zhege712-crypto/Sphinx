@@ -5,7 +5,7 @@ import { join } from 'node:path';
 export function sqliteAdapter(path = ':memory:') {
   const connection = new DatabaseSync(path);
   const wrap = (sql, values = []) => ({
-    bind: (...args) => wrap(sql, args),
+    bind: (...args) => wrap(sql, args.map((value) => value instanceof ArrayBuffer ? new Uint8Array(value) : value)),
     async first() { return connection.prepare(sql).get(...values) ?? null; },
     async all() { return { results: connection.prepare(sql).all(...values) }; },
     async run() { const r = connection.prepare(sql).run(...values); return { meta: { changes: Number(r.changes) } }; },
