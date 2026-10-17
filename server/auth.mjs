@@ -53,6 +53,8 @@ async function startSession(env, id, login) {
   return cookie(env, 'guide_session', token, 8 * 3600);
 }
 export async function authRoute(request, env, path) {
+  const methods = { '/api/session': 'GET', '/api/logout': 'POST', '/api/local-session': 'POST', '/auth/github': 'GET', '/auth/callback': 'GET' };
+  if (methods[path] && request.method !== methods[path]) return new Response(JSON.stringify({ error: '此入口不支持该请求方法' }), { status: 405, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', Allow: methods[path] } });
   if (path.startsWith('/auth/') || path === '/api/local-session') {
     const identity = await hash(request.headers.get('cf-connecting-ip') || 'local');
     const key = `auth:${identity}:${Math.floor(Date.now() / 600000)}`;
@@ -61,12 +63,13 @@ export async function authRoute(request, env, path) {
   }
   if (path === '/api/session') {
     const user = await session(request, env, false);
-    return json({ user: user ? { id: user.id, login: user.login, role: user.role } : null, csrf: user?.csrf, localDemo: env.LOCAL_DEMO === true, githubConfigured: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET && env.OWNER_GITHUB_ID), publishingConfigured: env.LOCAL_DEMO === true || Boolean(env.GITHUB_REPOSITORY && env.GITHUB_PUBLISH_TOKEN) });
+    return json({ user: user ? { id: user.id, login: user.login, role: user.role } : null, csrf: user?.csrf, localDemo: env.LOCAL_DEMO === true, githubConfigured: Boolean(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET && env.OWNER_GITHUB_ID), ...(user?.role === 'owner' ? { publishingConfigured: env.LOCAL_DEMO === true || Boolean(env.GITHUB_REPOSITORY && env.GITHUB_PUBLISH_TOKEN) } : {}) });
   }
   if (path === '/api/local-session' && request.method === 'POST') {
     if (env.LOCAL_DEMO !== true) throw new HttpError(404, '未找到该入口');
     requireOrigin(request, env);
     const input = await request.json();
+    if (!input || !['owner', 'editor'].includes(input.role)) throw new HttpError(400, '请选择本地演示角色');
     const id = input.role === 'editor' ? 'local-editor' : env.OWNER_GITHUB_ID;
     const login = input.role === 'editor' ? '演示伙伴' : '演示站主';
     if (id === 'local-editor') await env.DB.prepare('INSERT INTO members(github_id,login,active,created_at) VALUES(?,?,1,?) ON CONFLICT(github_id) DO UPDATE SET active=1').bind(id, login, now()).run();
@@ -79,6 +82,7 @@ export async function authRoute(request, env, path) {
   }
   if (path === '/auth/github' && request.method === 'GET') {
     if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET || !env.OWNER_GITHUB_ID || !env.APP_ORIGIN) throw new HttpError(503, 'GitHub 登录尚未配置；当前只可使用本地演示入口');
+    if (new URL(request.url).origin !== env.APP_ORIGIN) throw new HttpError(403, '请从正式工作台开始登录');
     const state = randomToken();
     await env.DB.prepare('INSERT INTO oauth_states(state_hash,expires_at) VALUES(?,?)').bind(await hash(state), Date.now() + 600000).run();
     const target = new URL('https://github.com/login/oauth/authorize');
@@ -86,6 +90,7 @@ export async function authRoute(request, env, path) {
     return redirect(target.href, [cookie(env, 'guide_oauth', state, 600)]);
   }
   if (path === '/auth/callback' && request.method === 'GET') {
+    if (new URL(request.url).origin !== env.APP_ORIGIN) throw new HttpError(403, '登录回调地址不符合工作台配置');
     const url = new URL(request.url);
     const state = url.searchParams.get('state');
     const code = url.searchParams.get('code');
@@ -94,10 +99,10 @@ export async function authRoute(request, env, path) {
     if (!consumed) throw new HttpError(403, '登录链接已失效，请重新登录');
     const tokenResponse = await (env.OAUTH_FETCH || fetch)('https://github.com/login/oauth/access_token', { method: 'POST', signal: AbortSignal.timeout(10000), headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ client_id: env.GITHUB_CLIENT_ID, client_secret: env.GITHUB_CLIENT_SECRET, code, redirect_uri: `${env.APP_ORIGIN}/auth/callback` }) });
     const token = await tokenResponse.json();
-    if (!tokenResponse.ok || !token.access_token) throw new HttpError(502, 'GitHub 验证未完成，请重新登录');
+    if (!tokenResponse.ok || typeof token.access_token !== 'string' || !token.access_token || /[\r\n]/.test(token.access_token)) throw new HttpError(502, 'GitHub 验证未完成，请重新登录');
     const profileResponse = await (env.OAUTH_FETCH || fetch)('https://api.github.com/user', { signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${token.access_token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'Sphinx' } });
     const profile = await profileResponse.json();
-    if (!profileResponse.ok || !Number.isSafeInteger(profile.id) || !profile.login) throw new HttpError(502, '无法读取 GitHub 身份，请稍后重试');
+    if (!profileResponse.ok || !Number.isSafeInteger(profile.id) || profile.id <= 0 || typeof profile.login !== 'string' || !/^[a-z\d][a-z\d-]{0,38}$/i.test(profile.login)) throw new HttpError(502, '无法读取 GitHub 身份，请稍后重试');
     const id = String(profile.id);
     const invited = id === env.OWNER_GITHUB_ID || await env.DB.prepare('SELECT github_id FROM members WHERE github_id=? AND active=1').bind(id).first();
     if (!invited) throw new HttpError(403, '这个 GitHub 账号尚未被站主邀请');

@@ -267,6 +267,8 @@ Each public guide article and Reference term shows “最近更新” with a sem
 
 ### Dialogs and Feedback
 
+Anonymous public pages omit workspace and edit-term entry links. Authenticated workspace readers may return to writing; owners copy the partner workspace URL from the existing Members page, beneath a short explanation that the account must be invited first. This uses a plain button and quiet paragraph within the established management layout. The URL itself grants no access. Nonowner management routes redirect to the workspace with a permission message.
+
 Native dialogs use a compact title, clear explanatory copy, and right-aligned actions. Deletion review uses a red submission button and names the affected content. Toasts are dark, compact, and positioned near the lower center of the workspace, with an explicit close button. Saving and upload progress use small inline status treatments; recovery and conflict states remain actionable beside the document.
 
 Motion is limited: outline navigation scrolls smoothly, progress uses a linear spinner, and toast entry lasts (.22s). The reduced-motion query removes animations, transitions, and smooth scrolling.

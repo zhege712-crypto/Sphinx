@@ -109,7 +109,7 @@ test('草稿图片保密，真实图片格式验证，明确发布后才允许�
   assert.equal((await f.as(f.owner, a.url)).status, 200);
   assert.equal((await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: '有图文章', version: 1, blocks: [{ type: 'image', props: { url: a.url } }] })).status, 200);
   assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: 2 })).status, 200);
-  assert.equal((await f.req(a.url)).status, 200); assert.equal((await f.req(`/assets/${a.id}.png`)).status, 200);
+  assert.equal((await f.req(a.url)).status, 401); assert.equal((await f.req(`/assets/${a.id}.png`)).status, 200);
 });
 test('删除必须申请且只有站主可批准，包含子文档，公开目录随审核一起移除', async (t) => {
   const f = await fixture(t); const folder = await f.create(f.editor, { title: '目录', kind: 'folder' }); const child = await f.create(f.editor, { parentId: folder.id });
@@ -266,4 +266,66 @@ test('旧数据库标签迁移保留草稿、公开快照、版本和修改时�
   DB.exec(await readFile(new URL('../server/migrations/0001-reference-tags.sql', import.meta.url), 'utf8'));
   const row = await DB.prepare('SELECT * FROM documents WHERE id=?').bind('original').first();
   assert.equal(row.draft, draft); assert.equal(row.published, published); assert.equal(row.version, 7); assert.equal(row.updated_at, 'unchanged-time'); assert.equal(row.tags, '[]');
+});
+
+test('匿名无法探测工作台图片是否存在，停用后下载权限立即撤销', async t => {
+  const f = await fixture(t); const png = Uint8Array.from([137,80,78,71,13,10,26,10,0,0]);
+  const asset = await (await f.as(f.editor, '/api/assets', 'POST', png)).json();
+  const existing = await f.req(asset.url); const missing = await f.req(`/api/assets/${crypto.randomUUID()}`);
+  assert.equal(existing.status, 401); assert.equal(missing.status, 401); assert.deepEqual(await existing.json(), await missing.json());
+  const privateFile = await f.as(f.editor, asset.url); assert.equal(privateFile.status, 200); assert.equal(privateFile.headers.get('cache-control'), 'private, no-store');
+  await f.as(f.owner, '/api/members/local-editor/deactivate', 'POST');
+  assert.equal((await f.as(f.editor, asset.url)).status, 401);
+});
+
+test('生产成功与错误响应都应用 CSP、防嵌入与资源隔离，匿名不披露发布配置', async t => {
+  const f = await fixture(t); f.env.LOCAL_DEMO = false; f.env.GITHUB_PUBLISH_TOKEN = 'test-only-token'; f.env.GITHUB_REPOSITORY = 'example/guide';
+  f.env.ASSETS = { fetch: async () => new Response('<!doctype html><title>Test</title>', { headers: { 'Content-Type': 'text/html' } }) };
+  for (const path of ['/', '/api/documents', `/assets/${crypto.randomUUID()}.png`, '/api/session']) {
+    const response = await f.req(path); const headers = response.headers;
+    assert.match(headers.get('content-security-policy'), /script-src 'self'/); assert.match(headers.get('content-security-policy'), /frame-ancestors 'none'/);
+    assert.equal(headers.get('x-content-type-options'), 'nosniff'); assert.equal(headers.get('x-frame-options'), 'DENY');
+    assert.equal(headers.get('referrer-policy'), 'no-referrer'); assert.equal(headers.get('cross-origin-resource-policy'), 'same-origin');
+    assert.equal(headers.get('cross-origin-opener-policy'), 'same-origin'); assert.match(headers.get('strict-transport-security'), /max-age=/);
+  }
+  const anonymous = await (await f.req('/api/session')).json(); assert.equal(anonymous.user, null); assert.equal(anonymous.csrf, undefined); assert.equal(anonymous.publishingConfigured, undefined);
+  assert.equal((await (await f.as(f.editor, '/api/session')).json()).publishingConfigured, undefined);
+  assert.equal((await (await f.as(f.owner, '/api/session')).json()).publishingConfigured, true);
+  const invalidMethod = await f.req('/api/session', { method: 'POST', body: {} }); assert.equal(invalidMethod.status, 405); assert.equal(invalidMethod.headers.get('allow'), 'GET');
+});
+
+test('演示登录仅限回环 HTTP 环境，生产误配置也不会开放站主身份', async t => {
+  const f = await fixture(t);
+  assert.equal((await f.req('/api/local-session', { method: 'POST', body: {} })).status, 400);
+  f.env.APP_ORIGIN = 'https://workspace.example'; f.env.LOCAL_DEMO = true;
+  const request = new Request('https://workspace.example/api/local-session', { method: 'POST', headers: { Origin: f.env.APP_ORIGIN, 'Content-Type': 'application/json' }, body: '{"role":"owner"}' });
+  const response = await worker.fetch(request, f.env); assert.equal(response.status, 404); assert.equal(response.headers.get('set-cookie'), null);
+  const session = await (await worker.fetch(new Request('https://workspace.example/api/session'), f.env)).json(); assert.equal(session.localDemo, false); assert.equal(session.user, null);
+});
+
+test('过期或伪造会话被拒绝，JSON 接口拒绝非对象和错误格式', async t => {
+  const f = await fixture(t);
+  for (const body of [null, [], 'text']) assert.equal((await f.as(f.editor, '/api/documents', 'POST', body)).status, 400);
+  const plain = new Request(`${ORIGIN}/api/documents`, { method: 'POST', headers: { Origin: ORIGIN, Cookie: f.editor.cookie, 'X-CSRF-Token': f.editor.csrf, 'Content-Type': 'text/plain' }, body: '{"title":"bad"}' });
+  assert.equal((await worker.fetch(plain, f.env)).status, 415);
+  await f.DB.prepare('UPDATE sessions SET expires_at=? WHERE github_id=?').bind(Date.now() - 1, 'local-editor').run();
+  assert.equal((await f.as(f.editor, '/api/documents')).status, 401);
+  assert.equal((await f.req('/api/documents', { cookie: `guide_session=${'a'.repeat(43)}` })).status, 401);
+});
+
+test('未受邀 GitHub 账号无法创建会话，登录起点与回调必须使用正式域名', async t => {
+  const f = await fixture(t); f.env.LOCAL_DEMO = false; f.env.GITHUB_CLIENT_ID = 'test-client'; f.env.GITHUB_CLIENT_SECRET = 'test-secret';
+  assert.equal((await worker.fetch(new Request('https://alias.example/auth/github'), f.env)).status, 403);
+  const start = await f.req('/auth/github'); const state = new URL(start.headers.get('location')).searchParams.get('state'); const cookie = start.headers.get('set-cookie').split(';')[0];
+  assert.equal((await worker.fetch(new Request(`https://alias.example/auth/callback?state=${state}&code=test`, { headers: { Cookie: cookie } }), f.env)).status, 403);
+  let calls = 0; f.env.OAUTH_FETCH = async () => new Response(JSON.stringify(++calls === 1 ? { access_token: 'test-token' } : { id: 1234567, login: 'not-invited' }));
+  const response = await f.req(`/auth/callback?state=${state}&code=test`, { cookie }); assert.equal(response.status, 403); assert.equal(response.headers.get('set-cookie'), null);
+  assert.equal((await f.DB.prepare('SELECT count(*) AS count FROM sessions WHERE github_id=?').bind('1234567').first()).count, 0);
+});
+
+test('登录限流会在发起更多 OAuth 跳转之前生效', async t => {
+  const f = await fixture(t); f.env.LOCAL_DEMO = false; f.env.GITHUB_CLIENT_ID = 'test-client'; f.env.GITHUB_CLIENT_SECRET = 'test-secret';
+  await f.DB.prepare("DELETE FROM rate_limits WHERE key LIKE 'auth:%'").run();
+  for (let i = 0; i < 30; i++) assert.equal((await f.req('/auth/github')).status, 302);
+  const response = await f.req('/auth/github'); assert.equal(response.status, 429); assert.equal(response.headers.get('location'), null);
 });

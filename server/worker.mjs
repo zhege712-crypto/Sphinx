@@ -1,9 +1,11 @@
 import { InputError, sanitizeDocument, safeTitle, emptyDocument, imageType, collectAssets, documentText } from '../shared/document.mjs';
 import { safeTags } from '../shared/tags.mjs';
-import { authRoute, authorize, session, HttpError, json, queryAll, now, recordAudit } from './auth.mjs';
+import { authRoute, authorize, HttpError, json, queryAll, now, recordAudit } from './auth.mjs';
 import { publicCatalog, publishedVersion, publish, reconcile } from './publication.mjs';
 import { d1Files } from './d1-files.mjs';
 import { initializeReferences } from './initialize-references.mjs';
+import { isLoopbackDemo } from '../shared/security-policy.mjs';
+import { secureResponse } from './response-security.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
@@ -22,7 +24,11 @@ async function bytes(request, limit) {
   while (true) { const { done, value } = await reader.read(); if (done) break; size += value.length; if (size > limit) { await reader.cancel(); throw new HttpError(413, '上传内容过大'); } chunks.push(value); }
   const result = new Uint8Array(size); let offset = 0; for (const chunk of chunks) { result.set(chunk, offset); offset += chunk.length; } return result;
 }
-async function body(request) { try { return parse(new TextDecoder().decode(await bytes(request, 450000))); } catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(400, '请求内容格式不正确'); } }
+async function body(request) {
+  if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get('content-type') || '')) throw new HttpError(415, '此接口仅接受 JSON 内容');
+  try { const input = parse(new TextDecoder().decode(await bytes(request, 450000))); if (!input || typeof input !== 'object' || Array.isArray(input)) throw new Error(); return input; }
+  catch (e) { if (e instanceof HttpError) throw e; throw new HttpError(400, '请求内容格式不正确'); }
+}
 async function parentCheck(env, id, parentId) {
   let current = parentId; const seen = new Set([id]);
   for (let depth = 0; current; depth++) { if (depth > 12 || seen.has(current)) throw new HttpError(400, '目录不能循环嵌套，最多支持 12 层'); seen.add(current); current = (await rowFor(env, current)).parent_id; }
@@ -60,12 +66,12 @@ async function route(request, env) {
   const publicAsset = /^\/assets\/([a-f0-9-]{36})\.(png|jpg|gif|webp)$/.exec(path);
   const assetMatch = /^\/api\/assets\/([a-f0-9-]{36})$/.exec(path) || publicAsset;
   if (assetMatch && request.method === 'GET') {
+    if (!publicAsset) await authorize(request, env);
     const a = await env.DB.prepare('SELECT * FROM assets WHERE id=?').bind(assetMatch[1]).first();
     if (!a) throw new HttpError(404, '图片不存在');
     if (publicAsset && (!a.public_at || publicAsset[2] !== a.extension)) throw new HttpError(404, '图片尚未公开');
-    if (!a.public_at) await session(request, env);
     const object = await env.FILES.get(a.id); if (!object) throw new HttpError(404, '图片不存在');
-    return new Response(object.body, { headers: { 'Content-Type': a.mime, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': a.public_at ? 'public, max-age=3600' : 'private, no-store', 'Content-Disposition': 'inline' } });
+    return new Response(object.body, { headers: { 'Content-Type': a.mime, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': publicAsset ? 'public, max-age=3600' : 'private, no-store', 'Content-Disposition': 'inline' } });
   }
   if (!path.startsWith('/api/')) return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
   const user = await authorize(request, env, path.startsWith('/api/members') || path === '/api/audit' || path === '/api/reconcile' || path === '/api/references/initialize');
@@ -164,16 +170,13 @@ async function route(request, env) {
 }
 export default {
   async fetch(request, env) {
+    env = { ...env, LOCAL_DEMO: isLoopbackDemo(env, request.url) };
     try {
       env = { ...env, FILES: env.FILES || d1Files(env.DB) };
-      const response = await route(request, env);
-      const headers = new Headers(response.headers);
-      headers.set('X-Content-Type-Options', 'nosniff'); headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-      headers.set('X-Frame-Options', 'DENY');
-      return new Response(response.body, { status: response.status, headers });
+      return secureResponse(await route(request, env), env);
     } catch (error) {
-      if (!(error instanceof HttpError || error instanceof InputError)) console.error('Request failed', error.message);
-      return json({ error: error instanceof HttpError || error instanceof InputError ? error.message : '操作暂未完成，请保留内容后重试' }, error.status || (error instanceof InputError ? 400 : 500));
+      if (!(error instanceof HttpError || error instanceof InputError)) console.error('Request failed', error.name || 'Error');
+      return secureResponse(json({ error: error instanceof HttpError || error instanceof InputError ? error.message : '操作暂未完成，请保留内容后重试' }, error.status || (error instanceof InputError ? 400 : 500)), env);
     }
   },
   async scheduled(_event, env) { await env.DB.batch(['sessions', 'oauth_states', 'rate_limits', 'locks'].map((table) => env.DB.prepare(`DELETE FROM ${table} WHERE expires_at<?`).bind(Date.now()))); },

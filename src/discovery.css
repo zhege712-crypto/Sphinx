@@ -1,6 +1,8 @@
 /* Tags and search remain part of the dictionary, rather than becoming cards. */
 .tree-level { min-width: 0; grid-template-columns: minmax(0, 1fr); }
 .tree-row, .tree-document span { min-width: 0; }
+.workspace-invite { padding: 16px 0 22px; border-bottom: 1px solid var(--line); }
+.workspace-invite p { color: var(--muted); font-size: 13px; line-height: 1.8; margin-bottom: 12px; }
 mark { background: #e8efff; color: #245bdb; border-radius: 2px; padding: 0; }
 .tag-list { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 12px 0 24px; }
 .tag-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--sidebar); color: #455166; border: 1px solid var(--line); border-radius: 5px; padding: 4px 8px; min-height: 28px; max-width: 100%; overflow-wrap: anywhere; white-space: normal; font-size: 12px; line-height: 1.6; }

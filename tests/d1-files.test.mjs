@@ -35,7 +35,7 @@ test('分块事务失败会释放预留容量，缺失分块不会返回截断�
 test('不绑定 R2 时使用真实 D1 图片适配器，匿名仍不可读取私有素材', async (t) => {
   const { DB } = await fixture(t); const origin = 'http://127.0.0.1:5173';
   const env = { DB, APP_ORIGIN: origin, OWNER_GITHUB_ID: 'owner', LOCAL_DEMO: true };
-  const login = await worker.fetch(new Request(`${origin}/api/local-session`, { method: 'POST', headers: { Origin: origin }, body: '{}' }), env);
+  const login = await worker.fetch(new Request(`${origin}/api/local-session`, { method: 'POST', headers: { Origin: origin }, body: '{"role":"owner"}' }), env);
   const cookie = login.headers.get('set-cookie').split(';')[0];
   const s = await (await worker.fetch(new Request(`${origin}/api/session`, { headers: { Cookie: cookie } }), env)).json();
   const bytes = Uint8Array.from([137,80,78,71,13,10,26,10,1,2,3]);
