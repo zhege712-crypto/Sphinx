@@ -10,5 +10,8 @@ This project uses unmodified packages installed from npm. Their original license
 | Mantine | MIT | https://github.com/mantinedev/mantine |
 | Vite | MIT | https://github.com/vitejs/vite |
 | Lucide | ISC | https://github.com/lucide-icons/lucide |
+| Lobe Icons static SVG 1.95.1 (OpenAI, Anthropic, Claude, DeepSeek marks) | MIT | https://github.com/lobehub/lobe-icons |
+
+The four vendored brand SVGs are in `src/assets/brands/`, alongside their MIT license. They identify links to the corresponding products and providers; brand names and marks remain the property of their respective owners. Their presence does not indicate sponsorship or endorsement.
 
 BlockNote source is available at the upstream tag matching the version in package-lock.json. Modified MPL-covered files, if introduced later, must retain applicable MPL notices and source availability obligations. Application content uploaded by authors is separate from these software licenses.
