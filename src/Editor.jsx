@@ -10,6 +10,8 @@ import { Outline, Reader } from './Reader';
 import References, { BuildCredits } from './References';
 import { WebsiteCard, websiteUrl } from './WebsiteCard';
 import { imageBlock, imageTextBlock } from './ImageBlocks';
+import { codeDemoBlock } from './CodeDemoBlock';
+import { Code2 } from 'lucide-react';
 import TermLinkDialog from './TermLinkDialog';
 import { TagEditor, TagList } from './Tags';
 import useScrollMemory from './useScrollMemory';
@@ -25,7 +27,7 @@ function EditableWebsiteCard({ block, editor }) {
 const linkCard = createReactBlockSpec({ type: 'linkCard', propSchema: { title: { default: '' }, url: { default: '' } }, content: 'none' }, {
   render: props => <EditableWebsiteCard {...props} />,
 })();
-const schema = BlockNoteSchema.create({ blockSpecs: { ...supported, image: imageBlock, imageText: imageTextBlock, linkCard } });
+const schema = BlockNoteSchema.create({ blockSpecs: { ...supported, image: imageBlock, imageText: imageTextBlock, linkCard, codeDemo: codeDemoBlock } });
 const Tool = ({ label, icon: Icon, onClick }) => <button type="button" className="icon-button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick}><Icon size={18} /></button>;
 
 export default forwardRef(function Editor({ document: initial, user, onSaved, onStatus, preview, toast, referenceEntries, onReferenceOpen, onBackReference, onBack, backLabel }, ref) {
@@ -127,6 +129,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { imageInsertMode.current = 'imageText'; fileInput.current.click(); }}><Columns2 size={16} />图文并排</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={addTable}><Table2 size={16} />表格</button>
         <button type="button" title="插入文本代码块，阅读时可一键复制" onMouseDown={e => e.preventDefault()} onClick={() => { const [block] = editor.insertBlocks([{ type: 'codeBlock', props: { language: 'text' }, content: '' }], editor.getTextCursorPosition().block, 'after'); editor.setTextCursorPosition(block, 'start'); editor.focus(); }}><Copy size={16} />可复制内容</button>
+        <button type="button" title="导入 HTML / SVG，在独立窗口预览效果" onMouseDown={e => e.preventDefault()} onClick={() => { editor.insertBlocks([{ type: 'codeDemo', props: { title: '', source: '', height: 400 } }], editor.getTextCursorPosition().block, 'after'); }}><Code2 size={16} />代码演示</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={openTermLink}><Link size={16} />词汇链接</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { editor.insertBlocks([{ type: 'linkCard', props: { title: '', url: '' } }], editor.getTextCursorPosition().block, 'after'); }}><Link2 size={16} />链接卡片</button>
         </div>

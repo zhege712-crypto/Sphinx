@@ -1,0 +1,26 @@
+.code-demo{width:100%;min-width:0;margin:22px 0;border:1px solid #d9dfe9;border-radius:6px;overflow:hidden;background:#fff;text-align:left;color:#303742}
+.code-demo-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 14px;background:#f5f7fa;border-bottom:1px solid #d9dfe9}
+.code-demo-title{display:flex;align-items:center;gap:8px;min-width:0;overflow-wrap:anywhere;font-size:13px;font-weight:500}
+.code-demo-title>svg{flex-shrink:0;color:#667182}
+.code-demo-actions{display:flex;gap:8px;flex-shrink:0}
+.code-demo-actions button{min-height:36px;padding:5px 9px;font-size:12px;background:#fff}
+.code-demo-stage{width:100%;max-height:80vh;min-height:180px;background:#f5f7fa;border:12px solid #f5f7fa}
+.code-demo-stage iframe{display:block;width:100%;height:100%;border:1px solid #e3e7ee;background:#fff}
+.code-demo-placeholder{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;background:#fff;color:#626d7d;font-size:13px;border:1px solid #e3e7ee}
+.code-demo-status{padding:7px 14px;font-size:11px;color:#626d7d;border-top:1px solid #e3e7ee}
+.code-demo-error,.reader-body p.code-demo-error{font-size:12px;line-height:1.7;color:#a1373b;white-space:pre-wrap;overflow-wrap:anywhere;margin:0;padding:10px 14px}
+.code-demo-source{border-top:1px solid #e3e7ee;margin:0!important}
+.code-demo-source>summary{cursor:pointer;padding:10px 14px;font-size:12px;min-height:40px}
+.code-demo-source .copy-block{margin:0;border:0;border-radius:0}
+.code-demo-source .copy-block pre{max-height:360px}
+.code-demo-editor{width:100%;min-width:0;margin:18px 0}
+.code-demo-fields{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:12px}
+.code-demo-fields>label{display:grid;gap:7px;font-size:12px;color:#626d7d}
+.code-demo-fields>label:first-child{flex:1;min-width:160px}
+.code-demo-fields input,.code-demo-fields select{width:100%;min-width:0;min-height:36px;font-size:13px}
+.code-demo-fields>button{min-height:36px;font-size:12px}
+.code-demo-source-label{display:grid;gap:7px;font-size:12px;color:#626d7d}
+.code-demo-source-label textarea{width:100%;min-height:180px;resize:vertical;line-height:1.6;font:13px/1.6 Consolas,monospace;white-space:pre;overflow:auto;tab-size:2}
+.code-demo-hint{font-size:12px;line-height:1.8;color:#626d7d;margin:9px 0}
+.code-demo-editor .code-demo{margin-top:14px}
+@media(max-width:700px){.code-demo-header{align-items:flex-start;flex-wrap:wrap;padding:9px 11px}.code-demo-actions button{min-height:44px}.code-demo-stage{border-width:8px}.code-demo-source>summary{min-height:44px}.code-demo-fields>button,.code-demo-fields select{min-height:44px}}

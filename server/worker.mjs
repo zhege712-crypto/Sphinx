@@ -187,7 +187,7 @@ export default {
     env = { ...env, LOCAL_DEMO: isLoopbackDemo(env, request.url) };
     try {
       env = { ...env, FILES: env.FILES || d1Files(env.DB) };
-      return secureResponse(await route(request, env), env);
+      return secureResponse(await route(request, env), env, request.url);
     } catch (error) {
       if (!(error instanceof HttpError || error instanceof InputError)) console.error('Request failed', error.name || 'Error');
       return secureResponse(json({ error: error instanceof HttpError || error instanceof InputError ? error.message : '操作暂未完成，请保留内容后重试' }, error.status || (error instanceof InputError ? 400 : 500)), env);
