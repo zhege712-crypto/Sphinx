@@ -25,7 +25,6 @@ button.tag-chip[aria-pressed=true] { background: #e8efff; color: #245bdb; border
 .related-tags > span { font-size: 12px; color: var(--muted); margin-right: 4px; }
 .search-count { color: var(--muted); font-size: 12px; line-height: 1.8; padding: 16px 0 8px; }
 .dictionary-name { display: grid; gap: 6px; min-width: 0; }
-.dictionary-row-tags { display: flex; flex-wrap: wrap; gap: 4px 10px; color: var(--muted); font-size: 11px; line-height: 1.7; }
 .dictionary-search-list .dictionary-term { padding: 16px 0; border-bottom: 1px solid var(--line); width: 100%; }
 .search-snippet { display: block; color: var(--muted); font-size: 12px; line-height: 1.7; white-space: normal !important; font-weight: 400; overflow-wrap: anywhere; }
 .site-search-results { margin: 0 4px; }
@@ -52,7 +51,6 @@ button.tag-chip[aria-pressed=true] { background: #e8efff; color: #245bdb; border
   .reference-filters { gap: 8px; }
   .reference-filters select { max-width: min(220px, 60vw); }
   .reference-filters label, .filter-reset { font-size: 14px; }
-  .dictionary-row-tags { font-size: 12px; }
   .search-count { font-size: 13px; }
   .search-clear { min-width: 44px; min-height: 44px; }
   .term-navigation { flex-wrap: wrap; gap: 8px 16px; }

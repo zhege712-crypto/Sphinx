@@ -40,7 +40,7 @@ export default function References({ entries = [], onOpen, onCreate, onInitializ
   const groups = [...new Set(filtered.map(({ entry }) => initial(entry.title)))].sort((a, b) => a === '#' ? 1 : b === '#' ? -1 : a.localeCompare(b));
   const relatedTags = query.trim() ? entryTags(matches.map(({ entry }) => entry)).slice(0, 8) : [];
   function row({ entry, hint }) {
-    const contents = <><span className="dictionary-name"><span><Highlight text={entry.title} query={query} /></span>{entry.tags?.length > 0 && <span className="dictionary-row-tags">{entry.tags.map(value => <span key={tagKey(value)}><Highlight text={value} query={query} /></span>)}</span>}{query && hint && <small className="search-snippet"><Highlight text={hint} query={query} /></small>}</span>{onOpen && <small>{!entry.publishedVersion ? '草稿' : entry.publishedVersion === entry.version ? '已发布' : '有未发布修改'}</small>}<ArrowRight size={14} /></>;
+    const contents = <><span className="dictionary-name"><span><Highlight text={entry.title} query={query} /></span>{query && hint && <small className="search-snippet"><Highlight text={hint} query={query} /></small>}</span>{onOpen && <small>{!entry.publishedVersion ? '草稿' : entry.publishedVersion === entry.version ? '已发布' : '有未发布修改'}</small>}<ArrowRight size={14} /></>;
     const remember = () => persist({ lastId: entry.id, scroll: root.current?.closest('.reference-page')?.scrollTop || 0 });
     return onOpen ? <button data-term-id={entry.id} className="dictionary-term" key={entry.id} onClick={() => { remember(); onOpen(entry.id); }}>{contents}</button> : <a data-term-id={entry.id} className="dictionary-term" key={entry.id} href={`#/reference/${entry.id}`} onClick={remember}>{contents}</a>;
   }
