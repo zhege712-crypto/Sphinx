@@ -12,6 +12,7 @@ import { WebsiteCard, websiteUrl } from './WebsiteCard';
 import { imageBlock, imageTextBlock } from './ImageBlocks';
 import { codeDemoBlock } from './CodeDemoBlock';
 import { Code2 } from 'lucide-react';
+import SiteNotice from './SiteNotice';
 import TermLinkDialog from './TermLinkDialog';
 import { TagEditor, TagList } from './Tags';
 import useScrollMemory from './useScrollMemory';
@@ -149,6 +150,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
       </div>
       {initial.kind === 'reference' ? <div className="term-editor-footer"><button onClick={onBackReference}>返回词条索引</button><BuildCredits /></div> : <References entries={referenceEntries} onOpen={onReferenceOpen} compact />}
       <div className="document-footer">{saving ? <Loader2 size={14} className="spin" /> : <CheckCircle2 size={14} />}<span>{saving ? '正在保存…' : dirty ? '等待保存' : '草稿已保存'} · {user.login}</span></div>
+      <SiteNotice writing />
     </section>
     <Outline blocks={blocks} editing={!preview} />
     {linkTarget && <TermLinkDialog target={linkTarget} entries={referenceEntries} onApply={applyTermLink} onRemove={removeTermLink} onClose={closeTermLink} />}

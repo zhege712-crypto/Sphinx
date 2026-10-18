@@ -1,5 +1,6 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react';
-import { Search, X, Plus, ArrowRight } from 'lucide-react';
+import { Search, X, Plus, ArrowRight, ChevronDown, ChevronRight } from 'lucide-react';
+import SiteNotice from './SiteNotice';
 import { BuildCredits } from './Brands';
 import { Highlight } from './SearchResults';
 import { referenceInitial as initial, compareReferenceTitles, REFERENCE_LETTERS } from '../shared/reference-index.mjs';
@@ -16,6 +17,10 @@ function readState(key) {
 }
 export default function References({ entries = [], onOpen, onCreate, onInitialize, compact = false }) {
   const headingId = useId(); const root = useRef(); const restored = useRef(false);
+  const panelId = useId();
+  const foldKey = `sphinx-reference-expanded:${onOpen ? 'writer' : 'reader'}`;
+  const [expanded, setExpanded] = useState(() => { if (!compact) return true; try { return localStorage.getItem(foldKey) === 'true'; } catch { return false; } });
+  function toggleExpanded() { const next = !expanded; setExpanded(next); try { localStorage.setItem(foldKey, String(next)); } catch {} }
   const key = referenceStateKey(!!onOpen) + (compact ? ':embedded' : '');
   const [filters, setFilters] = useState(() => readState(key)); const stored = useRef(filters);
   const { query, letter, tag } = filters;
@@ -40,7 +45,8 @@ export default function References({ entries = [], onOpen, onCreate, onInitializ
     return onOpen ? <button data-term-id={entry.id} className="dictionary-term" key={entry.id} onClick={() => { remember(); onOpen(entry.id); }}>{contents}</button> : <a data-term-id={entry.id} className="dictionary-term" key={entry.id} href={`#/reference/${entry.id}`} onClick={remember}>{contents}</a>;
   }
   return <section ref={root} className={`references dictionary ${compact ? 'dictionary-compact' : ''}`} aria-labelledby={headingId}>
-    <div className="reference-heading"><h2 id={headingId}>Reference</h2><div className="dictionary-actions"><div className="reference-search"><Search size={16} /><input aria-label="搜索 Reference 词条" maxLength={160} placeholder="名称、标签、正文或拼音" value={query} onChange={event => update({ query: event.target.value, letter: '' })} />{query && <button className="icon-button" aria-label="清空 Reference 搜索" onClick={() => update({ query: '' })}><X size={14} /></button>}</div>{onCreate && <button className="primary" onClick={onCreate}><Plus size={15} />新建词条</button>}</div></div>
+    <div className={`reference-heading ${compact ? 'reference-disclosure' : ''}`}><h2 id={headingId}>{compact ? <button type="button" className="reference-disclosure-toggle" aria-expanded={expanded} aria-controls={panelId} aria-label={`${expanded ? '收起' : '展开'}文章末尾的 Reference`} onClick={toggleExpanded}>{expanded ? <ChevronDown size={17} /> : <ChevronRight size={17} />}<span>Reference</span><span className="reference-fold-count">{entries.length} 个词条</span><span className="reference-fold-label">{expanded ? '收起' : '展开'}</span></button> : 'Reference'}</h2>{expanded && <div className="dictionary-actions"><div className="reference-search"><Search size={16} /><input aria-label="搜索 Reference 词条" maxLength={160} placeholder="名称、标签、正文或拼音" value={query} onChange={event => update({ query: event.target.value, letter: '' })} />{query && <button className="icon-button" aria-label="清空 Reference 搜索" onClick={() => update({ query: '' })}><X size={14} /></button>}</div>{onCreate && <button className="primary" onClick={onCreate}><Plus size={15} />新建词条</button>}</div>}</div>
+    <div id={panelId} hidden={!expanded}>
     <div className="reference-filters">{tags.length > 0 && <label>标签<select aria-label="按标签筛选词条" value={tag} onChange={event => update({ tag: event.target.value })}><option value="">全部标签</option>{tags.map(item => <option value={item.tag} key={tagKey(item.tag)}>{item.tag}（{item.count}）</option>)}</select></label>}{(query || letter || tag) && <button className="filter-reset" onClick={() => update({ query: '', letter: '', tag: '' })}>清除筛选</button>}</div>
     {relatedTags.length > 0 && <div className="related-tags"><span>相关标签</span>{relatedTags.map(item => <button className="tag-chip" key={tagKey(item.tag)} aria-pressed={tagKey(tag) === tagKey(item.tag)} onClick={() => update({ tag: tagKey(tag) === tagKey(item.tag) ? '' : item.tag })}>{item.tag}<small>{item.count}</small></button>)}</div>}
     <nav className="reference-index" aria-label="Reference 字母索引"><button className={!letter ? 'active' : ''} aria-pressed={!letter} onClick={() => update({ letter: '' })}>全部</button>{[...REFERENCE_LETTERS, ...(entries.some(entry => initial(entry.title) === '#') ? ['#'] : [])].map(l => <button key={l} className={letter === l ? 'active' : ''} aria-pressed={letter === l} aria-label={l === '#' ? '其他词条（数字、符号等）' : undefined} onClick={() => update({ letter: letter === l ? '' : l })}>{l === '#' ? '其他' : l}</button>)}</nav>
@@ -48,6 +54,8 @@ export default function References({ entries = [], onOpen, onCreate, onInitializ
     {query.trim() ? <div className="dictionary-search-list">{filtered.map(row)}</div> : <div className="dictionary-groups">{groups.map(group => <section className="dictionary-group" key={group} aria-label={`${group === '#' ? '其他' : group} 词条`}><h3>{group === '#' ? '其他' : group}</h3><div className="dictionary-terms">{filtered.filter(({ entry }) => initial(entry.title) === group).map(row)}</div></section>)}</div>}
     {!filtered.length && <p className="reference-empty" role="status">{entries.length ? '没有找到匹配词条。试试名称、标签或拼音，也可以清除筛选。' : onCreate ? '还没有词条，点击“新建词条”开始。' : '词条正在整理中。'}</p>}
     {onInitialize && !entries.length && <button onClick={onInitialize}>迁移原有词条</button>}
+    </div>
     <BuildCredits />
+    {!compact && <SiteNotice writing={!!onOpen} />}
   </section>;
 }
