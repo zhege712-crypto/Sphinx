@@ -40,6 +40,8 @@
 
 应用只允许嵌入本站运行器，脚本 CSP 仍不允许内联代码。精确路径 `/demo-runner.html` 是唯一使用不同 CSP 的静态响应：允许内联脚本，禁止连接、外部资源、Worker、对象和表单；HTTP CSP 另有 `sandbox allow-scripts` 和本站祖先限制。其他页面、API 和错误响应继续防嵌入。
 
+Cloudflare Assets 会把 `.html` 路径重定向为无扩展名形式，因此该特例同时精确匹配 `/demo-runner.html` 与 `/demo-runner`，不匹配其他目录或路径。
+
 运行器与用户代码位于两个独立 iframe，均只有 `allow-scripts`，没有同源、弹窗、下载、表单或顶层导航权限。运行器仅接收父窗口的一次源码消息；内层 srcdoc 的第一项 CSP 进一步禁止子框架，运行器的 frame-src 也阻止内层跳往外站。父页面核对消息来源，不根据演示消息执行任何管理动作。Pages 使用相同静态 CSP 和 iframe sandbox；Pages 不能提供运行器的 HTTP CSP sandbox 或祖先限制，嵌入演示的两层 HTML sandbox 仍有效。
 
 演示不自动运行，可停止/重启。此功能不是恶意代码托管服务：iframe 没有可靠 CPU、内存或执行超时配额，死循环等仍可能影响浏览器性能。首版仅支持受邀创作伙伴提供的轻量、单文件示例，不支持联网依赖、npm、任意服务器编译或私有素材引用。已发布源码本身为公开内容。

@@ -24,6 +24,7 @@ test('只有静态运行器可嵌入并执行内联脚本，应用与错误响�
   const runner = secureResponse(html(), env, 'https://workspace.example/demo-runner.html');
   assert.equal(runner.headers.get('X-Frame-Options'), 'SAMEORIGIN');
   assert.equal(runner.headers.get('Content-Security-Policy'), DEMO_RUNNER_POLICY + "; frame-ancestors 'self'; sandbox allow-scripts");
+  assert.equal(secureResponse(html(), env, 'https://workspace.example/demo-runner').headers.get('Content-Security-Policy'), runner.headers.get('Content-Security-Policy'));
   assert.equal(DEMO_SANDBOX, 'allow-scripts');
   for (const url of ['/', '/api/documents', '/other/demo-runner.html', '/demo-runner.html/']) {
     const response = secureResponse(html(), env, 'https://workspace.example' + url);
