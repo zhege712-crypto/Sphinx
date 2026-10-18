@@ -3,6 +3,7 @@ import { Reader } from './Reader';
 import UpdatedAt from './UpdatedAt';
 import { BuildCredits } from './Brands';
 import './about.css';
+import SiteNotice from './SiteNotice';
 
 export default function About({ document, writing, hasDraft, onEdit, contributors, hasContributorsDraft, onEditContributors, busy }) {
   return <article className="about-page document-column">
@@ -27,6 +28,7 @@ export default function About({ document, writing, hasDraft, onEdit, contributor
         </div>
       </section>
       <BuildCredits />
+      <SiteNotice writing={writing} />
     </div>
   </article>;
 }

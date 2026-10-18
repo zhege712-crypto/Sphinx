@@ -303,6 +303,12 @@ Build credits are quieter (11px), with the label “网页构建支持” and Op
 
 ## Do's and Don'ts
 
+### Footer notice and embedded index
+
+Normal page surfaces end with a shared two-paragraph disclaimer after the content and build credits. A fine top rule, 12px muted text and comfortable line height keep it readable without competing with the article. Its underlined “关于与联系” link follows reader or writer navigation. The footer scrolls with the page; it never floats over prose or occupies a fixed viewport strip. Reading columns align it with the document measure; index, about and management containers use their existing inset.
+
+Only the Reference index embedded at an article or editor's end can collapse. It starts closed, showing a keyboard-operable title row, chevron, term count and explicit 展开/收起 label. The browser remembers reader and writer preferences separately. Search, filters and terms appear on expansion with existing state preserved; build credits remain visible. The standalone dictionary remains expanded. Mobile disclosure controls retain 44px targets and wrap the search beneath the title.
+
 ### Code demonstrations
 
 The editor's existing insert row includes “代码演示”. Its inline fields collect a title, height and a single HTML/SVG source, with file import beside them. A monospace textarea keeps source visibly distinct from prose. A short format hint explains the single-file and offline boundary. Drafts, preview and publication reuse the document workflow.
