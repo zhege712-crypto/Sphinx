@@ -332,3 +332,7 @@ Readers see a quiet bordered demonstration panel: a neutral header holds the tit
 - **Don't** replace draft, preview, publish, or review state labels with color alone.
 - **Don't** claim physical-device touch/keyboard verification from viewport testing, or describe static outline emphasis as scroll tracking.
 - **Don't** automatically link other occurrences of a selected term or apply a hyperlink to a stale document range.
+
+### Directory order
+
+A quiet 排序 action sits beside the directory heading. Its native modal offers a parent-directory selector and flat numbered rows, with a grip on the left and labeled up/down controls on the right. Pointer dragging and keyboard arrows on the grip share the same order; touch controls retain 44px targets. Pending changes lock the parent selector until save or reset. The owner sees 保存并应用顺序; collaborators see 提交排序审核. Error text remains in the dialog, and cancel preserves the existing directory. Contributors stay last and the alphabetic Reference index is unaffected.

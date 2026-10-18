@@ -8,7 +8,91 @@ import { hash } from '../server/auth.mjs';
 import { imageLayoutReplacement } from '../shared/image-layout.mjs';
 import { referenceHref, referenceIdFromLink } from '../shared/reference-links.mjs';
 import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID } from '../shared/project.mjs';
+import { directoryStamp } from '../shared/directory-order.mjs';
+import { prepareDirectoryOrder } from '../server/directory-order.mjs';
+import { publish } from '../server/publication.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
+
+test('站主排序同步公开顺序，保留私有改稿、未发布文档、内容时间与所属目录', async t => {
+  const f = await fixture(t); const folder = await f.create(f.owner, { title: '指南目录', kind: 'folder' });
+  const a = await f.create(f.owner, { title: 'A', parentId: folder.id });
+  const b = await f.create(f.owner, { title: 'B', parentId: folder.id });
+  const c = await f.create(f.owner, { title: '未发布 C', parentId: folder.id });
+  await f.as(f.owner, `/api/documents/${a.id}/publish`, 'POST', { version: 1 });
+  await f.as(f.owner, `/api/documents/${b.id}/publish`, 'POST', { version: 1 });
+  await f.as(f.editor, `/api/documents/${b.id}`, 'PUT', { title: 'B 私有改名', version: 1, blocks: blocks('秘密修改') });
+  const before = await f.DB.prepare('SELECT updated_at FROM documents WHERE id=?').bind(a.id).first();
+  const docs = (await (await f.as(f.owner, '/api/documents')).json()).documents;
+  const response = await f.as(f.owner, '/api/directory/order', 'POST', { parentId: folder.id, ids: [c.id, b.id, a.id], tree: directoryStamp(docs) });
+  assert.equal(response.status, 200, await response.clone().text());
+  const catalog = (await (await f.req('/api/public/catalog')).json()).documents;
+  assert.deepEqual(catalog.map(d => d.id), [b.id, a.id]);
+  assert.deepEqual(catalog.map(d => d.position), [2, 3]);
+  assert.ok(!JSON.stringify(catalog).includes('秘密')); assert.ok(!JSON.stringify(catalog).includes('私有改名'));
+  const rows = (await (await f.as(f.owner, '/api/documents')).json()).documents;
+  const clean = rows.find(d => d.id === a.id), dirty = rows.find(d => d.id === b.id), unpublished = rows.find(d => d.id === c.id);
+  assert.equal(clean.version, clean.publishedVersion); assert.ok(dirty.version > dirty.publishedVersion); assert.equal(unpublished.publishedVersion, null);
+  assert.equal(clean.updatedAt, before.updated_at); assert.ok([clean, dirty, unpublished].every(d => d.parentId === folder.id));
+  assert.deepEqual((await (await f.as(f.owner, `/api/documents/${b.id}`)).json()).document.blocks, [{ type: 'paragraph', props: {}, content: [{ type: 'text', text: '秘密修改', styles: {} }] }]);
+});
+
+test('伙伴排序必须审核，匿名、跨站与伙伴直接应用均被拒绝', async t => {
+  const f = await fixture(t); const a = await f.create(f.owner, { title: 'A' }), b = await f.create(f.owner, { title: 'B' });
+  const docs = (await (await f.as(f.owner, '/api/documents')).json()).documents;
+  const input = { ids: [b.id, a.id], parentId: null, tree: directoryStamp(docs) };
+  assert.equal((await f.req('/api/directory/order', { method: 'POST', body: input })).status, 401);
+  assert.equal((await f.as(f.editor, '/api/directory/order', 'POST', input)).status, 403);
+  assert.equal((await f.req('/api/directory/order', { ...f.owner, method: 'POST', body: input, origin: 'https://evil.example' })).status, 403);
+  const response = await f.as(f.editor, '/api/reviews', 'POST', { ...input, action: 'reorder' }); assert.equal(response.status, 201);
+  const { id } = await response.json();
+  assert.deepEqual((await (await f.as(f.owner, '/api/documents')).json()).documents.map(d => d.id), [a.id, b.id]);
+  assert.equal((await f.as(f.editor, `/api/reviews/${id}/approve`, 'POST')).status, 403);
+  assert.equal((await f.as(f.owner, `/api/reviews/${id}/approve`, 'POST')).status, 200);
+  assert.deepEqual((await (await f.as(f.owner, '/api/documents')).json()).documents.map(d => d.id), [b.id, a.id]);
+  assert.equal((await f.as(f.owner, `/api/reviews/${id}/approve`, 'POST')).status, 409);
+});
+
+test('排序拒绝跨目录、遗漏、重复、固定署名和词条，过期请求不能覆盖新内容', async t => {
+  const f = await fixture(t); const a = await f.create(f.owner, { title: 'A' }), b = await f.create(f.owner, { title: 'B' });
+  const child = await f.create(f.owner, { title: '子文档', parentId: a.id }), ref = await f.create(f.owner, { kind: 'reference', title: '词条' });
+  await f.as(f.owner, '/api/contributors/initialize', 'POST');
+  const docs = (await (await f.as(f.owner, '/api/documents')).json()).documents; const tree = directoryStamp(docs);
+  for (const ids of [[b.id], [b.id, b.id], [child.id, a.id], [ref.id, a.id], [CONTRIBUTORS_DOCUMENT_ID, a.id], [a.id, b.id]]) {
+    assert.equal((await f.as(f.owner, '/api/directory/order', 'POST', { ids, parentId: null, tree })).status, 400);
+  }
+  const review = await (await f.as(f.editor, '/api/reviews', 'POST', { action: 'reorder', ids: [b.id, a.id], tree })).json();
+  await f.create(f.owner, { title: '新文档' });
+  assert.equal((await f.as(f.owner, `/api/reviews/${review.id}/approve`, 'POST')).status, 409);
+  assert.equal((await f.as(f.owner, '/api/directory/order', 'POST', { ids: [b.id, a.id], tree })).status, 409);
+  assert.equal((await (await f.as(f.owner, `/api/documents/${a.id}`)).json()).document.version, 1);
+});
+
+test('排序在取得发布锁后再次核验完整目录，阻止验证后新建文档的竞态', async t => {
+  const f = await fixture(t); const a = await f.create(f.owner, { title: 'A' }), b = await f.create(f.owner, { title: 'B' });
+  const rows = (await f.DB.prepare('SELECT * FROM documents WHERE archived=0').all()).results;
+  const tree = directoryStamp(rows); const order = prepareDirectoryOrder(rows, { ids: [b.id, a.id], tree });
+  await f.create(f.editor, { title: '验证后的新建' });
+  await assert.rejects(publish(f.env, { id: 'local-owner' }, order.delta, [], null, tree), error => error.status === 409);
+  assert.equal((await f.DB.prepare('SELECT count(*) AS count FROM publication_jobs').first()).count, 0);
+  assert.equal((await f.DB.prepare('SELECT version FROM documents WHERE id=?').bind(a.id).first()).version, 1);
+});
+
+test('排序远程结果不明时保留作业，恢复仅应用排序且不会公开私有稿', async t => {
+  const f = await fixture(t); const a = await f.create(f.owner, { title: 'A' }), b = await f.create(f.owner, { title: 'B' });
+  await f.as(f.owner, `/api/documents/${a.id}/publish`, 'POST', { version: 1 });
+  await f.as(f.owner, `/api/documents/${b.id}/publish`, 'POST', { version: 1 });
+  await f.as(f.editor, `/api/documents/${a.id}`, 'PUT', { title: '未发布改名', version: 1, blocks: blocks('秘密草稿') });
+  const docs = (await (await f.as(f.owner, '/api/documents')).json()).documents;
+  f.env.LOCAL_DEMO = false; f.env.GITHUB_REPOSITORY = 'example/guide'; f.env.GITHUB_PUBLISH_TOKEN = 'test-only';
+  f.env.GITHUB_FETCH = async () => { throw new Error('network'); };
+  assert.equal((await f.as(f.owner, '/api/directory/order', 'POST', { ids: [b.id, a.id], tree: directoryStamp(docs) })).status, 500);
+  const job = await f.DB.prepare("SELECT * FROM publication_jobs WHERE status='pending'").first(); assert.ok(job);
+  await f.DB.prepare('UPDATE publication_jobs SET created_at=? WHERE id=?').bind(new Date(Date.now() - 180000).toISOString(), job.id).run();
+  f.env.GITHUB_FETCH = async () => new Response(JSON.stringify({ content: btoa(JSON.stringify({ publicationIds: [job.id] })) }));
+  assert.equal((await f.as(f.owner, '/api/reconcile', 'POST')).status, 200);
+  const catalog = (await (await f.req('/api/public/catalog')).json()).documents;
+  assert.deepEqual(catalog.map(d => d.id), [b.id, a.id]); assert.ok(!JSON.stringify(catalog).includes('秘密')); assert.ok(!JSON.stringify(catalog).includes('未发布改名'));
+});
 
 test('代码演示沿用草稿、历史与发布边界，源码只在显式发布后公开', async t => {
   const f = await fixture(t); const d = await f.create(f.editor, { title: '鹈鹕骑车', kind: 'reference' });

@@ -8,13 +8,15 @@ import { isLoopbackDemo } from '../shared/security-policy.mjs';
 import { secureResponse } from './response-security.mjs';
 import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID } from '../shared/project.mjs';
 import { contributorsDraft } from './contributors.mjs';
+import { directoryStamp } from '../shared/directory-order.mjs';
+import { prepareDirectoryOrder } from './directory-order.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
 const unlocked = "NOT EXISTS(SELECT 1 FROM locks WHERE name='publication' AND expires_at>?) AND NOT EXISTS(SELECT 1 FROM publication_jobs WHERE status IN ('pending','committed'))";
 const meta = (r) => ({ id: r.id, title: r.title, parentId: r.parent_id, kind: r.kind, position: r.position, version: r.version, publishedVersion: r.published_version, publishedAt: r.published_at, updatedAt: r.updated_at, updatedBy: r.updated_by, tags: parse(r.tags || '[]'), text: documentText(parse(r.draft)) });
 const rowFor = async (env, id) => { const r = await env.DB.prepare('SELECT * FROM documents WHERE id=? AND archived=0').bind(id).first(); if (!r) throw new HttpError(404, '文档不存在或已被移除'); return r; };
-export const treeStamp = (rows) => JSON.stringify(rows.map((r) => [r.id, r.version, r.parent_id]).sort((a, b) => a[0].localeCompare(b[0])));
+export const treeStamp = directoryStamp;
 async function writable(env) {
   if (await env.DB.prepare("SELECT name FROM locks WHERE name='publication' AND expires_at>? UNION ALL SELECT id FROM publication_jobs WHERE status IN ('pending','committed') LIMIT 1").bind(Date.now()).first()) throw new HttpError(409, '发布正在进行或等待恢复，请稍后保存；当前编辑内容仍保留');
 }
@@ -91,6 +93,16 @@ async function route(request, env) {
   }
   if (path === '/api/references/initialize' && request.method === 'POST') { await writable(env); return json(await initializeReferences(env, user)); }
   if (path === '/api/documents' && request.method === 'GET') return json({ documents: (await queryAll(env, 'SELECT * FROM documents WHERE archived=0 ORDER BY position,title')).map(meta) });
+  if (path === '/api/directory/order' && request.method === 'POST') {
+    if (user.role !== 'owner') throw new HttpError(403, '排序应用仅站主可执行，伙伴请提交排序审核');
+    await writable(env);
+    const input = await body(request);
+    const rows = await queryAll(env, 'SELECT * FROM documents WHERE archived=0');
+    const order = prepareDirectoryOrder(rows, input);
+    const result = await publish(env, user, order.delta, [], null, input.tree);
+    await recordAudit(env, user.id, 'reorder-directory', order.parentId || 'root');
+    return json(result);
+  }
   if (path === '/api/documents' && request.method === 'POST') {
     await writable(env); const input = await body(request); const id = crypto.randomUUID();
     const parentId = input.parentId || null; if (parentId) await parentCheck(env, id, parentId);
@@ -134,6 +146,16 @@ async function route(request, env) {
   if (path === '/api/reviews' && request.method === 'GET') return json({ reviews: (await queryAll(env, 'SELECT * FROM reviews ORDER BY created_at DESC LIMIT 100')).map((r) => ({ ...r, payload: parse(r.payload) })) });
   if (path === '/api/reviews' && request.method === 'POST') {
     const input = await body(request); const rows = await queryAll(env, 'SELECT * FROM documents WHERE archived=0');
+    if (input.action === 'reorder') {
+      await writable(env);
+      const order = prepareDirectoryOrder(rows, input);
+      const id = crypto.randomUUID();
+      const payload = { ids: order.ids, parentId: order.parentId, titles: order.titles, tree: treeStamp(rows) };
+      const inserted = await env.DB.prepare(`INSERT INTO reviews(id,action,payload,actor,created_at) SELECT ?,'reorder',?,?,? WHERE ${unlocked}`).bind(id, JSON.stringify(payload), user.id, now(), Date.now()).run();
+      if (!inserted.meta.changes) throw new HttpError(409, '发布过程中暂时无法提交排序，请稍后重试');
+      await recordAudit(env, user.id, 'request-reorder', id);
+      return json({ id }, 201);
+    }
     if (!['delete', 'bulkMove'].includes(input.action) || !Array.isArray(input.ids) || !input.ids.length || input.ids.length > 100 || input.ids.some((id) => !uuid(id) || !rows.some((r) => r.id === id))) throw new HttpError(400, '请选择需要审核的文档');
     const selected = new Set(input.ids);
     if (input.action === 'delete') { let changed = true; while (changed) { changed = false; for (const r of rows) if (selected.has(r.parent_id) && !selected.has(r.id)) { selected.add(r.id); changed = true; } } }
@@ -157,7 +179,7 @@ async function route(request, env) {
     }
     const payload = parse(r.payload); const rows = await queryAll(env, 'SELECT * FROM documents WHERE archived=0');
     if (treeStamp(rows) !== payload.tree) throw new HttpError(409, '申请提交后内容或目录已变化，请驳回后重新提交，避免误删或覆盖');
-    const delta = rows.filter((row) => payload.ids.includes(row.id)).map((row) => r.action === 'delete' ? { id: row.id, expectedVersion: row.version, remove: true } : { id: row.id, expectedVersion: row.version, move: { parentId: payload.parentId, position: row.position }, ...(row.published ? { snapshot: { ...parse(row.published), parentId: payload.parentId } } : {}) });
+    const delta = r.action === 'reorder' ? prepareDirectoryOrder(rows, payload).delta : rows.filter((row) => payload.ids.includes(row.id)).map((row) => r.action === 'delete' ? { id: row.id, expectedVersion: row.version, remove: true } : { id: row.id, expectedVersion: row.version, move: { parentId: payload.parentId, position: row.position }, ...(row.published ? { snapshot: { ...parse(row.published), parentId: payload.parentId } } : {}) });
     const result = await publish(env, user, delta, [], r.id);
     await env.DB.prepare('UPDATE reviews SET resolved_by=? WHERE id=?').bind(user.id, r.id).run();
     await recordAudit(env, user.id, `approve-${r.action}`, r.id);

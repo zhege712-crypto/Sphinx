@@ -1,5 +1,6 @@
 import { collectAssets, publicBlocks, documentText } from '../shared/document.mjs';
 import { HttpError, now, queryAll, recordAudit } from './auth.mjs';
+import { compareDirectoryEntries, directoryStamp } from '../shared/directory-order.mjs';
 
 const parse = (value) => value ? JSON.parse(value) : null;
 export async function publicCatalog(env) {
@@ -61,6 +62,7 @@ async function applyJob(env, job) {
   const statements = [
     env.DB.prepare("UPDATE documents SET archived=1,published=NULL WHERE id IN (SELECT json_extract(value,'$.id') FROM json_each(?) WHERE json_extract(value,'$.remove')=1)").bind(job.delta),
     env.DB.prepare("UPDATE documents SET parent_id=json_extract(item.value,'$.move.parentId'),position=json_extract(item.value,'$.move.position'),version=version+1,updated_at=? FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.move')='object'").bind(now(), job.delta),
+    env.DB.prepare("UPDATE documents SET position=json_extract(item.value,'$.reorder.position'),version=version+1 FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.reorder')='object'").bind(job.delta),
     env.DB.prepare("UPDATE documents SET published=json_extract(item.value,'$.snapshot'),published_version=json_extract(item.value,'$.snapshot.version'),published_at=json_extract(item.value,'$.snapshot.publishedAt') FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.snapshot')='object'").bind(job.delta),
     env.DB.prepare('UPDATE assets SET public_at=COALESCE(public_at,?) WHERE id IN (SELECT value FROM json_each(?))').bind(now(), job.asset_ids),
   ];
@@ -68,7 +70,7 @@ async function applyJob(env, job) {
   statements.push(env.DB.prepare("UPDATE publication_jobs SET status='complete',updated_at=? WHERE id=?").bind(now(), job.id));
   await env.DB.batch(statements);
 }
-export async function publish(env, actor, delta, assets = [], reviewId = null) {
+export async function publish(env, actor, delta, assets = [], reviewId = null, expectedTree = null) {
   if (env.LOCAL_DEMO !== true && (!/^[\w.-]+\/[\w.-]+$/.test(env.GITHUB_REPOSITORY ?? '') || !env.GITHUB_PUBLISH_TOKEN)) throw new HttpError(503, '发布服务尚未配置，草稿已保留');
   const token = crypto.randomUUID();
   const acquired = await env.DB.prepare('INSERT INTO locks(name,token,expires_at) VALUES(?,?,?) ON CONFLICT(name) DO UPDATE SET token=excluded.token,expires_at=excluded.expires_at WHERE locks.expires_at<? RETURNING token').bind('publication', token, Date.now() + 300000, Date.now()).first();
@@ -77,11 +79,11 @@ export async function publish(env, actor, delta, assets = [], reviewId = null) {
   try {
     const pending = await env.DB.prepare("SELECT id FROM publication_jobs WHERE status IN ('pending','committed') LIMIT 1").first();
     if (pending) throw new HttpError(409, '存在未确认的发布，请让站主先恢复发布状态');
-    if (reviewId) {
-      const review = await env.DB.prepare("SELECT payload FROM reviews WHERE id=? AND status='pending'").bind(reviewId).first();
+    if (reviewId || expectedTree !== null) {
+      const review = reviewId ? await env.DB.prepare("SELECT payload FROM reviews WHERE id=? AND status='pending'").bind(reviewId).first() : null;
       const rows = await queryAll(env, 'SELECT id,version,parent_id FROM documents WHERE archived=0');
-      const stamp = JSON.stringify(rows.map((r) => [r.id, r.version, r.parent_id]).sort((a, b) => a[0].localeCompare(b[0])));
-      if (!review || parse(review.payload).tree !== stamp) throw new HttpError(409, '审核内容已变化，请重新提交申请');
+      const stamp = directoryStamp(rows);
+      if (reviewId ? !review || parse(review.payload).tree !== stamp : expectedTree !== stamp) throw new HttpError(409, '内容或目录已变化，请刷新后重新调整或提交申请');
     }
     const currentRows = await queryAll(env, 'SELECT id,version,archived FROM documents WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(delta.map((entry) => entry.id)));
     for (const entry of delta) {
@@ -93,6 +95,7 @@ export async function publish(env, actor, delta, assets = [], reviewId = null) {
       catalog.documents = catalog.documents.filter((doc) => doc.id !== entry.id);
       if (!entry.remove && entry.snapshot) catalog.documents.push(entry.snapshot);
     }
+    catalog.documents.sort(compareDirectoryEntries);
     if (new TextEncoder().encode(JSON.stringify(catalog)).byteLength > 1400000) throw new HttpError(400, '站点内容已超出首版发布容量，请由站主调整发布架构');
     const id = crypto.randomUUID();
     catalog.publicationIds = [id, ...catalog.publicationIds].slice(0, 100);

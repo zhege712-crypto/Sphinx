@@ -22,9 +22,18 @@ test('只有静态运行器可嵌入并执行内联脚本，应用与错误响�
   const env = { LOCAL_DEMO: false };
   const html = () => new Response('<html></html>', { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
   const runner = secureResponse(html(), env, 'https://workspace.example/demo-runner.html');
-  assert.equal(runner.headers.get('X-Frame-Options'), 'SAMEORIGIN');
-  assert.equal(runner.headers.get('Content-Security-Policy'), DEMO_RUNNER_POLICY + "; frame-ancestors 'self'; sandbox allow-scripts");
+  assert.equal(runner.headers.get('X-Frame-Options'), null);
+  assert.equal(runner.headers.get('Content-Security-Policy'), DEMO_RUNNER_POLICY + "; frame-ancestors https://workspace.example; sandbox allow-scripts");
   assert.equal(secureResponse(html(), env, 'https://workspace.example/demo-runner').headers.get('Content-Security-Policy'), runner.headers.get('Content-Security-Policy'));
+  const cached = secureResponse(new Response(null, { status: 304, headers: { 'X-Frame-Options': 'DENY' } }), env, 'https://workspace.example/demo-runner');
+  assert.equal(cached.headers.get('Content-Security-Policy'), runner.headers.get('Content-Security-Policy'));
+  assert.equal(cached.headers.get('X-Frame-Options'), null);
+  const redirect = location => new Response(null, { status: 307, headers: { Location: location } });
+  assert.equal(secureResponse(redirect('/demo-runner'), env, 'https://workspace.example/demo-runner.html').headers.get('Content-Security-Policy'), runner.headers.get('Content-Security-Policy'));
+  for (const location of ['/api/documents', 'https://elsewhere.example/demo-runner', '/demo-runner?other=1']) {
+    assert.equal(secureResponse(redirect(location), env, 'https://workspace.example/demo-runner.html').headers.get('X-Frame-Options'), 'DENY');
+  }
+  assert.equal(secureResponse(redirect('/demo-runner'), env, 'https://workspace.example/other.html').headers.get('X-Frame-Options'), 'DENY');
   assert.equal(DEMO_SANDBOX, 'allow-scripts');
   for (const url of ['/', '/api/documents', '/other/demo-runner.html', '/demo-runner.html/']) {
     const response = secureResponse(html(), env, 'https://workspace.example' + url);
