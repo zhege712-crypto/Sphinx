@@ -6,6 +6,11 @@
 .about-author-note { color: var(--muted); font-size: 13px; line-height: 1.8; margin-bottom: 20px; }
 .project-introduction-empty { min-height: 140px; color: var(--muted); line-height: 1.8; }
 .project-introduction .reader-body { margin: 0; }
+.contributors-section { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+.contributors-section .reader-body { margin: 0; }
+.contributors-section .reader-body h3 { font-size: 18px; margin-top: 24px; }
+.contributors-empty { color: var(--muted); line-height: 1.8; }
+.about-author-note p + p { margin-top: 8px; }
 .contact-section { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
 .contact-section h2 { margin-bottom: 18px; }
 .contact-row { display: grid; grid-template-columns: 20px 80px minmax(0, 1fr) 16px; gap: 16px; align-items: center; min-height: 72px; padding: 14px 0; color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }

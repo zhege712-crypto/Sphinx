@@ -5,7 +5,7 @@ import { Reader, Outline } from './Reader';
 import References, { BuildCredits, selectReferenceTag } from './References';
 import SearchResults from './SearchResults';
 import About from './About';
-import { PROJECT_DOCUMENT_ID, isProjectDocument } from '../shared/project.mjs';
+import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID, isProjectDocument, isContributorsDocument, isAboutDocument } from '../shared/project.mjs';
 import { TagList } from './Tags';
 import { parseRoute, documentRoute, safeReturn } from '../shared/navigation.mjs';
 import { searchEntries } from '../shared/search.mjs';
@@ -115,7 +115,7 @@ export default function App() {
         refreshReviews().catch(() => {});
       } else if (!writing) {
         const list = await loadPublic(); if (cancelled) return;
-        const pool = list.filter(d => destination.view === 'references' ? d.kind === 'reference' : d.kind !== 'reference' && !isProjectDocument(d));
+        const pool = list.filter(d => destination.view === 'references' ? d.kind === 'reference' : d.kind !== 'reference' && !isAboutDocument(d));
         setCurrent(destination.id ? (pool.some(d => d.id === destination.id) ? destination.id : null) : destination.view === 'references' ? null : pool.find(d => d.kind !== 'folder')?.id || pool[0]?.id || null);
       }
     };
@@ -134,18 +134,20 @@ export default function App() {
   const backFallback = writing ? doc?.kind === 'reference' ? '#/write/reference' : '#/write/documents' : '#/reference';
   async function goBack() { await run(async () => { await flush(); if (previousRoute) history.back(); else location.hash = backFallback; }); }
   function browseTag(tag) { selectReferenceTag(false, tag); location.hash = '#/reference'; }
-  function openSearchEntry(entry) { if (writing) run(() => openDocument(entry.id)); else { closeMobileNavigation(); location.hash = isProjectDocument(entry) ? '#/about' : `#/${entry.kind === 'reference' ? 'reference' : 'read'}/${entry.id}`; } }
+  function openSearchEntry(entry) { if (writing) run(() => openDocument(entry.id)); else { closeMobileNavigation(); location.hash = isAboutDocument(entry) ? '#/about' : `#/${entry.kind === 'reference' ? 'reference' : 'read'}/${entry.id}`; } }
   async function login(role) { await run(async () => { await post('/api/local-session', { role }); await refreshSession(); }); }
   async function logout() { await run(async () => { await flush(); await post('/api/logout'); setSession({ ...session, user: null }); setDoc(null); setDocs([]); setCurrent(null); setMembers([]); setReviews([]); setAssets([]); setEvents([]); setSelected([]); setQuery(''); setMore(false); setDialog(null); setLoadError(''); }); }
   function saved(next) { setDocs((list) => list.map((d) => d.id === next.id ? { ...d, ...next, blocks: undefined } : d)); setDoc((d) => d?.id === next.id ? { ...d, ...next } : d); }
   async function create(input) { await run(async () => { await flush(); const r = await post('/api/documents', input.kind === 'reference' ? { ...input, parentId: null } : input); await refreshDocs(); setDialog(null); await openDocument(r.document.id, false); location.hash = documentRoute(r.document); toast(input.kind === 'reference' ? '词条已创建，可以开始编辑' : input.kind === 'folder' ? '目录已创建' : '文档已创建，可以开始写作'); }); }
   async function publishCurrent() { await run(async () => { if (!editorRef.current) return; const result = await editorRef.current.publish(); const list = await refreshDocs(); setDoc((d) => ({ ...d, ...list.find((r) => r.id === d.id) })); toast(result.localDemo ? '已发布到本地阅读站。线上发布将在部署后启用。' : '内容已提交到 GitHub，阅读站将在构建完成后更新'); }); }
   async function requestReview(action, ids, parentId = null) { await run(async () => { await flush(); await post('/api/reviews', { action, ids, parentId }); await refreshReviews(); setDialog(null); setSelected([]); toast('已提交，等待站主审核'); }); }
-  const activeDocs = (writing ? docs : publicDocs).filter(d => d.kind !== 'reference' && !isProjectDocument(d));
+  const activeDocs = (writing ? docs : publicDocs).filter(d => d.kind !== 'reference' && !isAboutDocument(d));
   const aboutPage = destination.view === 'about';
   const projectIntroduction = publicDocs.find(isProjectDocument);
   const projectDraft = docs.find(isProjectDocument);
-  async function editProjectIntroduction() { await run(async () => { await flush(); if (!projectDraft) { await post('/api/project/initialize'); await refreshDocs(); } await openDocument(PROJECT_DOCUMENT_ID, false); location.hash = `#/write/documents/${PROJECT_DOCUMENT_ID}`; }); }
+  const contributors = publicDocs.find(isContributorsDocument);
+  const contributorsDraft = docs.find(isContributorsDocument);
+  async function editAboutDocument(id, existingDraft, initializePath) { await run(async () => { await flush(); if (!existingDraft) { await post(initializePath); await refreshDocs(); } await openDocument(id, false); location.hash = `#/write/documents/${id}`; }); }
   const publicDoc = publicDocs.find((d) => d.id === current && d.kind !== 'reference');
   const isOwner = session.user?.role === 'owner';
   const referencesPage = !writing && route.startsWith('#/reference');
@@ -175,7 +177,7 @@ export default function App() {
         <div className="top-actions">{writing && view === 'editor' && doc ? <><div className="save-state" aria-live="polite">{status === 'saving' ? <Loader2 size={16} className="spin" /> : status === 'saved' ? <CheckCircle2 size={16} /> : <Circle size={14} />}<span>{({ saved: '已保存', saving: '正在保存', dirty: '未保存', error: '保存失败' })[status]}</span></div><Status doc={doc} /><button onClick={() => run(async () => { await flush(); setPreview(!preview); })}><Eye size={16} />{preview ? '返回编辑' : '预览'}</button><button className="primary" disabled={busy || status === 'error'} onClick={publishCurrent}><Upload size={16} />{busy ? '处理中…' : doc.publishedVersion ? '更新发布' : '发布'}</button><div className="more-wrap"><IconButton label="更多文档操作" icon={MoreHorizontal} onClick={() => setMore(!more)} />{more && <div className="menu-popover"><button onClick={() => run(async () => { await flush(); setDialog({ type: 'history', revisions: (await api(`/api/documents/${doc.id}/history`)).revisions }); setMore(false); })}><History size={16} />历史版本</button><button onClick={() => { setDialog({ type: 'move', ids: [doc.id] }); setMore(false); }}><Folder size={16} />调整目录</button><button onClick={() => downloadJson(`${doc.title}.json`, editorRef.current.snapshot())}><Download size={16} />导出当前草稿</button><button className="danger-text" onClick={() => { setDialog({ type: 'delete', ids: [doc.id] }); setMore(false); }}>申请删除</button></div>}</div></> : writing ? view === 'references' || aboutPage ? null : <button className="primary" onClick={() => setDialog({ type: 'create', ...(view === 'references' ? { kind: 'reference' } : {}) })}><Plus size={16} />{view === 'references' ? '新建词条' : '新建文档'}</button> : <>{publicReference && referencesPage && session.user && hasBackend && <a className="button" href={`#/write/reference/${publicReference.id}`}>编辑词条</a>}<button onClick={async () => { try { await navigator.clipboard.writeText(location.href); toast('阅读链接已复制'); } catch { toast('请复制浏览器地址栏中的阅读链接', true); } }}><ExternalLink size={16} />分享本页</button></>}</div>
       </header>
       {loadError && <div className="inline-error" role="alert">{loadError}<button onClick={() => writing ? refreshDocs().catch((e) => toast(e.message, true)) : loadPublic()}>重新加载</button></div>}
-      {aboutPage ? <About document={projectIntroduction} writing={writing} hasDraft={!!projectDraft} onEdit={writing && (isOwner || projectDraft) ? editProjectIntroduction : undefined} busy={busy} /> : writing ? <>
+      {aboutPage ? <About document={projectIntroduction} writing={writing} hasDraft={!!projectDraft} onEdit={writing && (isOwner || projectDraft) ? () => editAboutDocument(PROJECT_DOCUMENT_ID, projectDraft, '/api/project/initialize') : undefined} contributors={contributors} hasContributorsDraft={!!contributorsDraft} onEditContributors={writing && (isOwner || contributorsDraft) ? () => editAboutDocument(CONTRIBUTORS_DOCUMENT_ID, contributorsDraft, '/api/contributors/initialize') : undefined} busy={busy} /> : writing ? <>
         {view === 'editor' && (doc ? <Suspense fallback={<div className="startup"><Loader2 className="spin" />正在打开编辑器…</div>}><Editor key={`${doc.id}:${doc.editorKey}`} ref={editorRef} document={doc} user={session.user} referenceEntries={referenceEntries} onReferenceOpen={id => run(() => openDocument(id))} onBackReference={() => navigate('references')} onBack={goBack} backLabel={previousRoute ? '返回上一页' : doc.kind === 'reference' ? '返回词条索引' : '返回全部文档'} onSaved={saved} onStatus={setStatus} preview={preview} toast={toast} /></Suspense> : <div className="reading-home"><div className="empty-state reference-welcome"><h1>从第一篇文档开始</h1><p>创建目录，写下你的经验，再发布给读者。</p><button className="primary" onClick={() => setDialog({ type: 'create' })}><Plus size={16} />新建文档</button></div><References {...referenceProps} /></div>)}
         {view === 'references' && <div className="reference-page"><References {...referenceProps} /></div>}
         {view === 'home' && <section className="management"><h1>继续你的创作</h1><p className="section-description">所有伙伴共享草稿。保存用于保留进度，发布后读者才能看到。</p><div className="section-heading"><h2>最近更新</h2><button onClick={() => navigate('documents')}>查看全部<ChevronRight size={15} /></button></div><div className="document-list">{[...docs].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 8).map((d) => <button className="recent-row" key={d.id} onClick={() => openDocument(d.id)}><FileText size={19} /><div><strong>{d.title}</strong><small>{date(d.updatedAt)} 更新</small></div><Status doc={d} /><ChevronRight size={16} /></button>)}</div><div className="workspace-note"><Clock3 size={19} /><div><strong>删除与批量调整需要审核</strong><p>普通文章可自行发布。网站代码、成员与系统设置由站主管理。</p></div></div></section>}
