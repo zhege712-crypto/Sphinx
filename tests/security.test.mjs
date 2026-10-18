@@ -7,8 +7,31 @@ import { sanitizeDocument, safeLink, imageType } from '../shared/document.mjs';
 import { hash } from '../server/auth.mjs';
 import { imageLayoutReplacement } from '../shared/image-layout.mjs';
 import { referenceHref, referenceIdFromLink } from '../shared/reference-links.mjs';
-import { PROJECT_DOCUMENT_ID } from '../shared/project.mjs';
+import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID } from '../shared/project.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
+
+test('参与者名单仅站主可初始化，不自动公开或同步权限，支持没有 GitHub 的贡献者链接', async t => {
+  const f = await fixture(t);
+  await f.DB.prepare('INSERT INTO members(github_id,login,active,created_at) VALUES(?,?,?,?)').bind('writer-test-id', 'writer-demo', 1, '2026-01-01').run();
+  await f.DB.prepare('INSERT INTO members(github_id,login,active,created_at) VALUES(?,?,?,?)').bind('inactive-test-id', 'inactive-helper', 0, '2026-01-01').run();
+  assert.equal((await f.req('/api/contributors/initialize', { method: 'POST', body: {} })).status, 401);
+  assert.equal((await f.as(f.editor, '/api/contributors/initialize', 'POST')).status, 403);
+  assert.equal((await f.as(f.owner, '/api/contributors/initialize', 'POST')).status, 200);
+  let document = (await (await f.as(f.owner, `/api/documents/${CONTRIBUTORS_DOCUMENT_ID}`)).json()).document;
+  assert.match(JSON.stringify(document.blocks), /https:\/\/github.com\/writer-demo/);
+  assert.doesNotMatch(JSON.stringify(document.blocks), /inactive-helper/);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+  const custom = [{ type: 'heading', props: { level: 3 }, content: '其他贡献者' }, { type: 'paragraph', content: [{ type: 'link', href: 'https://example.com/helper', content: [{ type: 'text', text: '没有 GitHub 的帮助者', styles: {} }] }] }];
+  assert.equal((await f.as(f.editor, `/api/documents/${CONTRIBUTORS_DOCUMENT_ID}`, 'PUT', { version: 1, title: '参与者与致谢', blocks: custom })).status, 200);
+  await f.as(f.owner, '/api/contributors/initialize', 'POST');
+  document = (await (await f.as(f.owner, `/api/documents/${CONTRIBUTORS_DOCUMENT_ID}`)).json()).document;
+  assert.equal(document.version, 2); assert.match(JSON.stringify(document.blocks), /没有 GitHub 的帮助者/);
+  assert.equal((await f.as(f.owner, `/api/documents/${CONTRIBUTORS_DOCUMENT_ID}/publish`, 'POST', { version: 2 })).status, 200);
+  const published = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.equal(published.blocks[1].content[0].href, 'https://example.com/helper');
+  assert.equal((await f.req('/api/members')).status, 401);
+  assert.equal((await f.DB.prepare('SELECT count(*) AS count FROM members').first()).count, 3);
+});
 
 test('项目介绍初始化仅站主可执行，重复打开不覆盖草稿，内容仅显式发布后公开', async t => {
   const f = await fixture(t);
