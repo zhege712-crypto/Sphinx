@@ -267,6 +267,8 @@ Each public guide article and Reference term shows “最近更新” with a sem
 
 ### About and Contact
 
+Between the introduction and contacts, “参与者与致谢” is an independent rich-document section separated by a fine rule. The owner's initial action creates a private, editable roster with third-level groups “写作成员” and “其他贡献者”; subsequent visits use an Edit action. Names are plain list or paragraph content with standard text links, preserving the reading surface rather than adding profile cards. Authors see compact guidance for adding nicknames, contributions and external links, and the distinction between public credit and workspace access. The public section uses only its published snapshot and shows a quiet placeholder until publication. It inherits the established narrow-screen wrapping and document typography.
+
 The public `#/about` route and writer `#/write/about` route use the existing document column with the sidebar label “关于与联系”. A project introduction precedes a fine divider and three contact rows. Rows use the existing Lucide stroke icons, service labels, readable email/username text and external arrows; there are no contact card shells. Mobile rows place the service label above the value, keeping long email addresses inside the viewport. Email links use mailto; the Bilibili user search opens with noopener/noreferrer. The introduction starts with a quiet placeholder and is supplied by a normal document's published snapshot. The workspace offers an edit action and clearly labels the draft-to-publish behavior. Anonymous pages contain no authoring entry.
 
 ### Dialogs and Feedback
