@@ -15,7 +15,7 @@ export default function About({ document, writing, hasDraft, onEdit, contributor
       </section>
       <section className="contributors-section" aria-labelledby="contributors-title">
         <div className="about-section-heading"><h2 id="contributors-title">参与者与致谢</h2>{onEditContributors && <button disabled={busy} onClick={onEditContributors}><PencilLine size={15} />{hasContributorsDraft ? '编辑参与者名单' : '整理参与者名单'}</button>}</div>
-        {writing && <div className="about-author-note"><p>{hasContributorsDraft ? '名单支持自由分组，填写昵称、贡献和个人链接，无需 GitHub 账号。' : '首次打开会将现有写作成员带入草稿，并预留“其他贡献者”分组。'}</p><p>选中姓名或文字，点击“词汇链接 → 站外网址”，即可关联个人网站或其他主页。发布后展示于此；名单不授予工作台权限。</p></div>}
+        {writing && <div className="about-author-note"><p>{hasContributorsDraft ? '名单支持自由分组，填写昵称、贡献、个人链接和邮箱，无需 GitHub 账号。' : '首次打开会将现有写作成员带入草稿，并预留“其他贡献者”分组。'}</p><p>选中姓名或文字，点击“词汇链接 → 站外网址”，即可关联个人网站或其他主页；选择“邮箱”可关联邮箱地址。发布后展示于此；名单不授予工作台权限。</p></div>}
         {contributors ? <><UpdatedAt document={contributors} /><Reader blocks={contributors.blocks} /></> : <p className="contributors-empty">参与者名单正在整理中。</p>}
       </section>
       <section className="contact-section" aria-labelledby="contact-title">
