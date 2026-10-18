@@ -7,7 +7,27 @@ import { sanitizeDocument, safeLink, imageType } from '../shared/document.mjs';
 import { hash } from '../server/auth.mjs';
 import { imageLayoutReplacement } from '../shared/image-layout.mjs';
 import { referenceHref, referenceIdFromLink } from '../shared/reference-links.mjs';
+import { PROJECT_DOCUMENT_ID } from '../shared/project.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
+
+test('项目介绍初始化仅站主可执行，重复打开不覆盖草稿，内容仅显式发布后公开', async t => {
+  const f = await fixture(t);
+  assert.equal((await f.req('/api/project/initialize', { method: 'POST', body: {} })).status, 401);
+  assert.equal((await f.as(f.editor, '/api/project/initialize', 'POST')).status, 403);
+  const initialized = await f.as(f.owner, '/api/project/initialize', 'POST'); assert.equal(initialized.status, 200);
+  assert.equal((await initialized.json()).document.id, PROJECT_DOCUMENT_ID);
+  const result = await f.as(f.owner, `/api/documents/${PROJECT_DOCUMENT_ID}`, 'PUT', { version: 1, title: '我写的 Sphinx 介绍', blocks: blocks('项目私有草稿') });
+  assert.equal(result.status, 200);
+  await f.as(f.owner, '/api/project/initialize', 'POST');
+  const saved = (await (await f.as(f.owner, `/api/documents/${PROJECT_DOCUMENT_ID}`)).json()).document;
+  assert.equal(saved.version, 2); assert.equal(saved.title, '我写的 Sphinx 介绍');
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+  assert.equal((await f.as(f.owner, `/api/documents/${PROJECT_DOCUMENT_ID}/publish`, 'POST', { version: 2 })).status, 200);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents[0].id, PROJECT_DOCUMENT_ID);
+  await f.DB.prepare('UPDATE documents SET archived=1 WHERE id=?').bind(PROJECT_DOCUMENT_ID).run();
+  assert.equal((await f.as(f.owner, '/api/project/initialize', 'POST')).status, 404);
+  assert.equal((await f.DB.prepare('SELECT archived FROM documents WHERE id=?').bind(PROJECT_DOCUMENT_ID).first()).archived, 1);
+});
 test('词汇链接只允许固定格式的站内词条，跨部署路径仍指向同一词条', () => {
   const id = 'c71e0000-0000-4000-8000-000000000003'; const href = referenceHref(id);
   assert.equal(safeLink(href), href); assert.equal(referenceIdFromLink(href), id);

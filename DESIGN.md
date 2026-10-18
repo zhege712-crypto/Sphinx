@@ -265,6 +265,10 @@ The `imageText` block pairs an image figure with genuinely editable rich child b
 
 Each public guide article and Reference term shows “最近更新” with a semantic time element below its title. It uses the published snapshot's `updatedAt`, falling back to `publishedAt`; later private draft changes do not change the reader's date. Invalid or missing timestamps produce no label. The compact metadata row uses the existing quiet text treatment with tabular numerals, a gap (9px), and a bottom margin (30px), preserving the title-to-body hierarchy.
 
+### About and Contact
+
+The public `#/about` route and writer `#/write/about` route use the existing document column with the sidebar label “关于与联系”. A project introduction precedes a fine divider and three contact rows. Rows use the existing Lucide stroke icons, service labels, readable email/username text and external arrows; there are no contact card shells. Mobile rows place the service label above the value, keeping long email addresses inside the viewport. Email links use mailto; the Bilibili user search opens with noopener/noreferrer. The introduction starts with a quiet placeholder and is supplied by a normal document's published snapshot. The workspace offers an edit action and clearly labels the draft-to-publish behavior. Anonymous pages contain no authoring entry.
+
 ### Dialogs and Feedback
 
 Anonymous public pages omit workspace and edit-term entry links. Authenticated workspace readers may return to writing; owners copy the partner workspace URL from the existing Members page, beneath a short explanation that the account must be invited first. This uses a plain button and quiet paragraph within the established management layout. The URL itself grants no access. Nonowner management routes redirect to the workspace with a permission message.

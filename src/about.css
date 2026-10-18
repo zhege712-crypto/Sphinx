@@ -1,0 +1,26 @@
+.about-page { width: 100%; max-width: 1040px; margin-inline: auto; }
+.about-page .document-paper { max-width: 850px; margin-inline: auto; }
+.about-page .document-title { margin-bottom: 40px; }
+.about-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.about-page h2 { font-size: 20px; font-weight: 600; line-height: 1.5; }
+.about-author-note { color: var(--muted); font-size: 13px; line-height: 1.8; margin-bottom: 20px; }
+.project-introduction-empty { min-height: 140px; color: var(--muted); line-height: 1.8; }
+.project-introduction .reader-body { margin: 0; }
+.contact-section { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); }
+.contact-section h2 { margin-bottom: 18px; }
+.contact-row { display: grid; grid-template-columns: 20px 80px minmax(0, 1fr) 16px; gap: 16px; align-items: center; min-height: 72px; padding: 14px 0; color: inherit; text-decoration: none; border-bottom: 1px solid var(--line); }
+.contact-row:hover { color: var(--blue); }
+.contact-service { color: var(--muted); }
+.contact-value { overflow-wrap: anywhere; line-height: 1.6; }
+.contact-value small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.contact-row > svg { color: var(--muted); }
+.about-page .build-credits { margin-top: 36px; }
+@media (max-width: 600px) {
+  .about-section-heading { align-items: flex-start; flex-wrap: wrap; }
+  .about-section-heading button { min-height: 44px; }
+  .contact-row { grid-template-columns: 20px minmax(0, 1fr) 16px; column-gap: 12px; row-gap: 4px; }
+  .contact-row > svg:first-child { grid-row: 1 / 3; }
+  .contact-service { grid-column: 2; font-size: 12px; }
+  .contact-value { grid-column: 2; }
+  .contact-row > svg:last-child { grid-column: 3; grid-row: 1 / 3; }
+}
