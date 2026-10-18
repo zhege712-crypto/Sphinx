@@ -1,14 +1,16 @@
 import { CONTENT_SECURITY_POLICY } from '../shared/security-policy.mjs';
-export function secureResponse(response, env) {
+import { DEMO_RUNNER_POLICY } from '../shared/code-demo.mjs';
+export function secureResponse(response, env, requestUrl) {
+  const runner = requestUrl && new URL(requestUrl).pathname === '/demo-runner.html' && response.ok && response.headers.get('Content-Type')?.startsWith('text/html');
   const headers = new Headers(response.headers);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'no-referrer');
-  headers.set('X-Frame-Options', 'DENY');
+  headers.set('X-Frame-Options', runner ? 'SAMEORIGIN' : 'DENY');
   headers.set('Cross-Origin-Opener-Policy', 'same-origin');
   headers.set('Cross-Origin-Resource-Policy', 'same-origin');
   headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
-  if (env.LOCAL_DEMO !== true) {
-    headers.set('Content-Security-Policy', `${CONTENT_SECURITY_POLICY}; frame-ancestors 'none'`);
+  if (env.LOCAL_DEMO !== true || runner) {
+    headers.set('Content-Security-Policy', runner ? `${DEMO_RUNNER_POLICY}; frame-ancestors 'self'; sandbox allow-scripts` : `${CONTENT_SECURITY_POLICY}; frame-ancestors 'none'`);
     headers.set('Strict-Transport-Security', 'max-age=31536000');
   }
   return new Response(response.body, { status: response.status, headers });

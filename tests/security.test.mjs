@@ -10,6 +10,22 @@ import { referenceHref, referenceIdFromLink } from '../shared/reference-links.mj
 import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID } from '../shared/project.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
 
+test('代码演示沿用草稿、历史与发布边界，源码只在显式发布后公开', async t => {
+  const f = await fixture(t); const d = await f.create(f.editor, { title: '鹈鹕骑车', kind: 'reference' });
+  const source = '<svg><circle r="20" /></svg><script>window.example = true;</script>';
+  const blocks = [{ type: 'codeDemo', props: { title: '参考动画', source, height: 560 } }];
+  const result = await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: 1, blocks });
+  assert.equal(result.status, 200); const saved = (await result.json()).document;
+  assert.equal(saved.blocks[0].props.source, source);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: saved.version })).status, 200);
+  const published = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.equal(published.blocks[0].props.source, source);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: saved.version, blocks: [{ type: 'codeDemo', props: { source: '修订草稿' } }] })).status, 200);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents[0].blocks[0].props.source, source);
+  assert.equal((await f.req(`/api/documents/${d.id}`)).status, 401);
+});
+
 test('参与者名单仅站主可初始化，不自动公开或同步权限，支持没有 GitHub 的贡献者链接', async t => {
   const f = await fixture(t);
   await f.DB.prepare('INSERT INTO members(github_id,login,active,created_at) VALUES(?,?,?,?)').bind('writer-test-id', 'writer-demo', 1, '2026-01-01').run();

@@ -303,6 +303,12 @@ Build credits are quieter (11px), with the label “网页构建支持” and Op
 
 ## Do's and Don'ts
 
+### Code demonstrations
+
+The editor's existing insert row includes “代码演示”. Its inline fields collect a title, height and a single HTML/SVG source, with file import beside them. A monospace textarea keeps source visibly distinct from prose. A short format hint explains the single-file and offline boundary. Drafts, preview and publication reuse the document workflow.
+
+Readers see a quiet bordered demonstration panel: a neutral header holds the title and run/restart/stop actions, a 12px gray inset separates the white sandbox from the article, and a small status row precedes the collapsible source. The initial state invites a click; scripts never start on article load. Mobile controls have 44px targets, the header wraps, and the window stays inside the article width. Errors appear below the stage in readable text. The sandbox belongs to the artifact and cannot style the surrounding document.
+
 ### Do:
 - **Do** preserve the white document, cool gray rail, blue emphasis, and quiet divider relationship.
 - **Do** keep writing, preview, and reading typography consistent while labeling their different states.

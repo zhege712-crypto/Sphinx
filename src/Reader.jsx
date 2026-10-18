@@ -5,6 +5,7 @@ import { safeLink } from '../shared/document.mjs';
 import { groupLists } from '../shared/list-groups.mjs';
 import { WebsiteCard } from './WebsiteCard';
 import CopyBlock from './CopyBlock';
+import CodeDemo from './CodeDemo';
 export const inlineText = (value) => typeof value === 'string' ? value : Array.isArray(value) ? value.map(inlineText).join('') : value?.text || inlineText(value?.content || []);
 export function headings(blocks) { return (blocks || []).flatMap((b) => [...(b.type === 'heading' ? [{ id: b.id, text: inlineText(b.content), level: b.props?.level || 2 }] : []), ...headings(b.children)]); }
 function Inline({ value }) {
@@ -32,6 +33,7 @@ export function Reader({ blocks, privatePreview = false }) {
     const nested = b.children?.length ? <Reader blocks={b.children} privatePreview={privatePreview} /> : null;
     const key = b.id || index;
     const props = { id: `block-${b.id}`, style: { textAlign: b.props?.textAlignment } };
+    if (b.type === 'codeDemo') return <React.Fragment key={key}><CodeDemo id={props.id} {...b.props} />{nested}</React.Fragment>;
     if (b.type === 'linkCard') return <div key={key} {...props}><WebsiteCard title={b.props.title} url={b.props.url} />{nested}</div>;
     if (b.type === 'heading') { const H = `h${Math.min(3, Math.max(1, b.props?.level || 2))}`; return <React.Fragment key={key}><H {...props}>{content}</H>{nested}</React.Fragment>; }
     if (b.type === 'table') return <div key={key} {...props} className="table-scroll"><table><tbody>{b.content.rows.map((row, r) => <tr key={r}>{row.cells.map((cell, c) => { const Cell = r === 0 && b.content.headerRows === 1 ? 'th' : 'td'; return <Cell key={c} colSpan={cell.props?.colspan} rowSpan={cell.props?.rowspan}><Inline value={typeof cell === 'string' || Array.isArray(cell) ? cell : cell.content} /></Cell>; })}</tr>)}</tbody></table>{nested}</div>;
