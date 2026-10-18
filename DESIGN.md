@@ -265,6 +265,10 @@ The `imageText` block pairs an image figure with genuinely editable rich child b
 
 Each public guide article and Reference term shows “最近更新” with a semantic time element below its title. It uses the published snapshot's `updatedAt`, falling back to `publishedAt`; later private draft changes do not change the reader's date. Invalid or missing timestamps produce no label. The compact metadata row uses the existing quiet text treatment with tabular numerals, a gap (9px), and a bottom margin (30px), preserving the title-to-body hierarchy.
 
+### Copyable Text and Code
+
+Reader code blocks have a quiet language label and an always-visible Copy action in a separate header, above the horizontally scrollable preformatted text. The pale sidebar surface, existing small radius and fine divider keep the document grammar. The Copy action reports success, disables during the request and for empty content, and presents an actionable message when clipboard permission is denied. Its phone target is at least 44px high. The editor's “可复制内容” action inserts a standard text code block without replacing existing content. Clipboard text comes from the block model, preserving indentation and line breaks while excluding UI labels. Local browser verification includes a copy-and-paste roundtrip in Edge, a denied-permission fixture, and narrow-screen measurements.
+
 ### About and Contact
 
 Between the introduction and contacts, “参与者与致谢” is an independent rich-document section separated by a fine rule. The owner's initial action creates a private, editable roster with third-level groups “写作成员” and “其他贡献者”; subsequent visits use an Edit action. Names are plain list or paragraph content with standard text links, preserving the reading surface rather than adding profile cards. Authors see compact guidance for adding nicknames, contributions and external links, and the distinction between public credit and workspace access. The public section uses only its published snapshot and shows a quiet placeholder until publication. It inherits the established narrow-screen wrapping and document typography.

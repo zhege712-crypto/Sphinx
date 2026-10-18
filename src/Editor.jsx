@@ -3,7 +3,7 @@ import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core';
 import { zh } from '@blocknote/core/locales';
 import { createReactBlockSpec, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/mantine';
-import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2, Link, Columns2, ArrowLeft } from 'lucide-react';
+import { Undo2, Redo2, Bold, Italic, Underline, Strikethrough, Heading1, Heading2, Heading3, List, ListOrdered, ListTodo, ImagePlus, Table2, Download, RotateCcw, CheckCircle2, Loader2, Link2, Link, Columns2, ArrowLeft, Copy } from 'lucide-react';
 import '@blocknote/mantine/style.css';
 import { api, post, downloadJson } from './api';
 import { Outline, Reader } from './Reader';
@@ -126,6 +126,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { imageInsertMode.current = 'image'; fileInput.current.click(); }}><ImagePlus size={16} />图片</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { imageInsertMode.current = 'imageText'; fileInput.current.click(); }}><Columns2 size={16} />图文并排</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={addTable}><Table2 size={16} />表格</button>
+        <button type="button" title="插入文本代码块，阅读时可一键复制" onMouseDown={e => e.preventDefault()} onClick={() => { const [block] = editor.insertBlocks([{ type: 'codeBlock', props: { language: 'text' }, content: '' }], editor.getTextCursorPosition().block, 'after'); editor.setTextCursorPosition(block, 'start'); editor.focus(); }}><Copy size={16} />可复制内容</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={openTermLink}><Link size={16} />词汇链接</button>
         <button type="button" onMouseDown={e => e.preventDefault()} onClick={() => { editor.insertBlocks([{ type: 'linkCard', props: { title: '', url: '' } }], editor.getTextCursorPosition().block, 'after'); }}><Link2 size={16} />链接卡片</button>
         </div>
