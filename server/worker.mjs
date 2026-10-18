@@ -6,7 +6,8 @@ import { d1Files } from './d1-files.mjs';
 import { initializeReferences } from './initialize-references.mjs';
 import { isLoopbackDemo } from '../shared/security-policy.mjs';
 import { secureResponse } from './response-security.mjs';
-import { PROJECT_DOCUMENT_ID } from '../shared/project.mjs';
+import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID } from '../shared/project.mjs';
+import { contributorsDraft } from './contributors.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
@@ -75,12 +76,18 @@ async function route(request, env) {
     return new Response(object.body, { headers: { 'Content-Type': a.mime, 'X-Content-Type-Options': 'nosniff', 'Cache-Control': publicAsset ? 'public, max-age=3600' : 'private, no-store', 'Content-Disposition': 'inline' } });
   }
   if (!path.startsWith('/api/')) return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
-  const user = await authorize(request, env, path.startsWith('/api/members') || path === '/api/audit' || path === '/api/reconcile' || path === '/api/references/initialize' || path === '/api/project/initialize');
-  if (path === '/api/project/initialize' && request.method === 'POST') {
+  const aboutInitialization = ['/api/project/initialize', '/api/contributors/initialize'].includes(path);
+  const user = await authorize(request, env, path.startsWith('/api/members') || path === '/api/audit' || path === '/api/reconcile' || path === '/api/references/initialize' || aboutInitialization);
+  if (aboutInitialization && request.method === 'POST') {
     await writable(env);
-    const inserted = await env.DB.prepare(`INSERT OR IGNORE INTO documents(id,title,kind,position,draft,updated_at,updated_by) SELECT ?,?,'document',0,?,?,? WHERE ${unlocked}`).bind(PROJECT_DOCUMENT_ID, '关于 Sphinx', JSON.stringify(emptyDocument()), now(), user.id, Date.now()).run();
-    if (inserted.meta.changes) await recordAudit(env, user.id, 'create', PROJECT_DOCUMENT_ID);
-    return json({ document: { ...meta(await rowFor(env, PROJECT_DOCUMENT_ID)) } });
+    const contributors = path === '/api/contributors/initialize';
+    const id = contributors ? CONTRIBUTORS_DOCUMENT_ID : PROJECT_DOCUMENT_ID;
+    const existing = await env.DB.prepare('SELECT * FROM documents WHERE id=?').bind(id).first();
+    if (existing) return json({ document: meta(await rowFor(env, id)) });
+    const draft = contributors ? contributorsDraft([{ login: user.login }, ...await queryAll(env, 'SELECT login FROM members WHERE active=1 ORDER BY created_at,login')]) : emptyDocument();
+    const inserted = await env.DB.prepare(`INSERT OR IGNORE INTO documents(id,title,kind,position,draft,updated_at,updated_by) SELECT ?,?,'document',0,?,?,? WHERE ${unlocked}`).bind(id, contributors ? '参与者与致谢' : '关于 Sphinx', JSON.stringify(draft), now(), user.id, Date.now()).run();
+    if (inserted.meta.changes) await recordAudit(env, user.id, 'create', id);
+    return json({ document: { ...meta(await rowFor(env, id)) } });
   }
   if (path === '/api/references/initialize' && request.method === 'POST') { await writable(env); return json(await initializeReferences(env, user)); }
   if (path === '/api/documents' && request.method === 'GET') return json({ documents: (await queryAll(env, 'SELECT * FROM documents WHERE archived=0 ORDER BY position,title')).map(meta) });
