@@ -1,7 +1,8 @@
 import { CONTENT_SECURITY_POLICY } from '../shared/security-policy.mjs';
 import { DEMO_RUNNER_POLICY } from '../shared/code-demo.mjs';
 export function secureResponse(response, env, requestUrl) {
-  const runner = requestUrl && new URL(requestUrl).pathname === '/demo-runner.html' && response.ok && response.headers.get('Content-Type')?.startsWith('text/html');
+  // Workers Assets redirects .html to its exact extensionless clean URL.
+  const runner = requestUrl && ['/demo-runner.html', '/demo-runner'].includes(new URL(requestUrl).pathname) && response.ok && response.headers.get('Content-Type')?.startsWith('text/html');
   const headers = new Headers(response.headers);
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'no-referrer');
