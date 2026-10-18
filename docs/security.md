@@ -40,7 +40,7 @@
 
 应用只允许嵌入本站运行器，脚本 CSP 仍不允许内联代码。精确路径 `/demo-runner.html` 是唯一使用不同 CSP 的静态响应：允许内联脚本，禁止连接、外部资源、Worker、对象和表单；HTTP CSP 另有 `sandbox allow-scripts` 和本站祖先限制。其他页面、API 和错误响应继续防嵌入。
 
-Cloudflare Assets 会把 `.html` 路径重定向为无扩展名形式，因此该特例同时精确匹配 `/demo-runner.html` 与 `/demo-runner`，不匹配其他目录或路径。
+Cloudflare Assets 会把 `.html` 路径重定向为无扩展名形式，因此该特例同时精确匹配 `/demo-runner.html` 与 `/demo-runner`，不匹配其他目录或路径。仅从 `/demo-runner.html` 精确跳转至 `/demo-runner` 的平台重定向沿用运行器策略，避免导航阶段被禁止嵌入；其他跳转和错误继续禁止嵌入。304 缓存验证响应也沿用运行器策略，避免缓存命中后错误应用应用页的禁止嵌入规则。运行器由 CSP `frame-ancestors` 显式指定本站来源限制嵌入（沙箱为不透明来源，避免使用 `self` 比较），不附加与不透明沙箱来源冲突的 `X-Frame-Options SAMEORIGIN`；应用、API 和错误仍使用 `DENY`。
 
 运行器与用户代码位于两个独立 iframe，均只有 `allow-scripts`，没有同源、弹窗、下载、表单或顶层导航权限。运行器仅接收父窗口的一次源码消息；内层 srcdoc 的第一项 CSP 进一步禁止子框架，运行器的 frame-src 也阻止内层跳往外站。父页面核对消息来源，不根据演示消息执行任何管理动作。Pages 使用相同静态 CSP 和 iframe sandbox；Pages 不能提供运行器的 HTTP CSP sandbox 或祖先限制，嵌入演示的两层 HTML sandbox 仍有效。
 
@@ -49,3 +49,9 @@ Cloudflare Assets 会把 `.html` 路径重定向为无扩展名形式，因此�
 文章存储统一使用 BlockNote JSON，可后续接 Yjs 协作服务；当前版本号和快照接口保留兼容余地。Yjs 服务、并发权限、实时光标和在线人数尚未实现。
 
 文字链接只额外允许严格匹配 `#/reference/<UUID>` 的站内词条地址；其他相对地址和任意站内管理路由仍拒绝。站外延续 http/https/mailto 协议白名单及禁止网址内用户名密码；新词汇链接表单只接受 http/https。阅读页的站外网页链接以 noopener/noreferrer 在新标签页打开。词条存在不代表已公开，链接本身不会授予私有草稿读取权限。
+
+### 目录排序（2026-10-18）
+
+`POST /api/directory/order` 仅站主可直接应用；伙伴通过 `reorder` 审核申请提交。服务端要求精确的目录/版本快照及同级完整 ID 集合，拒绝遗漏、重复、跨目录、固定介绍/致谢、Reference 和超过 100 项的操作。获取发布锁后再次检查快照，防止检查与提交之间插入文档或发生编辑。
+
+排序发布作业只修改 position 和版本，不改正文、父目录或内容时间；只更新既有公开快照的位置，保留脏草稿与未发布内容。远程结果不明时沿用持久作业恢复，不重新发布私有草稿。5 项集成测试覆盖权限、审核、快照竞态、草稿边界与远程恢复；总计 56 项通过。
