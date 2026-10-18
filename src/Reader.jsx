@@ -4,6 +4,7 @@ import useMediaQuery from './useMediaQuery';
 import { safeLink } from '../shared/document.mjs';
 import { groupLists } from '../shared/list-groups.mjs';
 import { WebsiteCard } from './WebsiteCard';
+import CopyBlock from './CopyBlock';
 export const inlineText = (value) => typeof value === 'string' ? value : Array.isArray(value) ? value.map(inlineText).join('') : value?.text || inlineText(value?.content || []);
 export function headings(blocks) { return (blocks || []).flatMap((b) => [...(b.type === 'heading' ? [{ id: b.id, text: inlineText(b.content), level: b.props?.level || 2 }] : []), ...headings(b.children)]); }
 function Inline({ value }) {
@@ -34,7 +35,7 @@ export function Reader({ blocks, privatePreview = false }) {
     if (b.type === 'linkCard') return <div key={key} {...props}><WebsiteCard title={b.props.title} url={b.props.url} />{nested}</div>;
     if (b.type === 'heading') { const H = `h${Math.min(3, Math.max(1, b.props?.level || 2))}`; return <React.Fragment key={key}><H {...props}>{content}</H>{nested}</React.Fragment>; }
     if (b.type === 'table') return <div key={key} {...props} className="table-scroll"><table><tbody>{b.content.rows.map((row, r) => <tr key={r}>{row.cells.map((cell, c) => { const Cell = r === 0 && b.content.headerRows === 1 ? 'th' : 'td'; return <Cell key={c} colSpan={cell.props?.colspan} rowSpan={cell.props?.rowspan}><Inline value={typeof cell === 'string' || Array.isArray(cell) ? cell : cell.content} /></Cell>; })}</tr>)}</tbody></table>{nested}</div>;
-    if (b.type === 'codeBlock') return <pre key={key} {...props}><code>{inlineText(b.content)}</code></pre>;
+    if (b.type === 'codeBlock') return <CopyBlock key={key} id={props.id} text={inlineText(b.content)} language={b.props?.language} />;
     if (b.type === 'divider') return <hr key={key} {...props} />;
     if (b.type === 'image' || b.type === 'imageText') {
       const url = b.props?.url || '';
