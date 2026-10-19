@@ -1,5 +1,6 @@
 import { referenceIdFromLink } from './reference-links.mjs';
 import { demoProps } from './code-demo.mjs';
+import { backgroundProps } from './page-background.mjs';
 export class InputError extends Error {}
 export const emptyDocument = () => [{ type: 'paragraph', content: [] }];
 export const demoDocument = () => [
@@ -14,7 +15,7 @@ export const demoDocument = () => [
   { type: 'paragraph', content: [] },
 ];
 
-const blockTypes = new Set(['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem', 'quote', 'codeBlock', 'image', 'imageText', 'table', 'toggleListItem', 'divider', 'linkCard', 'codeDemo']);
+const blockTypes = new Set(['paragraph', 'heading', 'bulletListItem', 'numberedListItem', 'checkListItem', 'quote', 'codeBlock', 'image', 'imageText', 'table', 'toggleListItem', 'divider', 'linkCard', 'codeDemo', 'pageBackground']);
 const colors = new Set(['default', 'gray', 'brown', 'red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink']);
 const alignments = new Set(['left', 'center', 'right', 'justify']);
 export const safeTitle = (value) => {
@@ -34,7 +35,7 @@ export const assetIdFromUrl = (url) => typeof url === 'string' ? /^\/api\/assets
 
 export function sanitizeDocument(input) {
   if (!Array.isArray(input) || input.length > 1500 || JSON.stringify(input).length > 350000) throw new InputError('文档过大，请拆分成多个章节');
-  let count = 0;
+  let count = 0; let backgrounds = 0;
   const inline = (content, depth = 0) => {
     if (depth > 1) throw new InputError('链接不可重复嵌套');
     if (typeof content === 'string') return [{ type: 'text', text: content, styles: {} }];
@@ -62,7 +63,10 @@ export function sanitizeDocument(input) {
       if (block.type === 'numberedListItem' && Number.isInteger(raw.start) && raw.start > 0 && raw.start < 10000) props.start = raw.start;
       if (block.type === 'codeBlock') props.language = /^[a-z0-9+#.-]{1,35}$/i.test(raw.language ?? '') ? raw.language : 'text';
       let content;
-      if (block.type === 'codeDemo') {
+      if (block.type === 'pageBackground') {
+        if (depth || ++backgrounds > 1 || block.children?.length) throw new InputError('每篇文档只能设置一个页面背景，背景不能嵌套正文');
+        try { Object.assign(props, backgroundProps(raw)); } catch (e) { throw new InputError(e.message); }
+      } else if (block.type === 'codeDemo') {
         try { Object.assign(props, demoProps(raw)); } catch (e) { throw new InputError(e.message); }
       } else if (block.type === 'linkCard') {
         props.title = typeof raw.title === 'string' ? raw.title.slice(0, 160) : '';
@@ -75,6 +79,7 @@ export function sanitizeDocument(input) {
         props.caption = typeof raw.caption === 'string' ? raw.caption.slice(0, 1000) : '';
         props.showPreview = raw.showPreview !== false;
         if (Number.isFinite(raw.previewWidth)) props.previewWidth = Math.max(64, Math.min(raw.previewWidth, 1600));
+        if (Number.isFinite(raw.imageOffset)) props.imageOffset = Math.max(0, Math.min(100, raw.imageOffset));
         if (block.type === 'imageText') {
           props.side = raw.side === 'right' ? 'right' : 'left';
           props.imageWidth = Number.isFinite(raw.imageWidth) ? Math.max(25, Math.min(65, raw.imageWidth)) : 40;
@@ -120,7 +125,7 @@ export function collectAssets(blocks) {
   return [...ids];
 }
 export function publicBlocks(blocks, assets) {
-  return blocks.map((block) => ({ ...block, props: ['image', 'imageText'].includes(block.type) && block.props.url ? { ...block.props, url: `assets/${assetIdFromUrl(block.props.url)}.${assets.get(assetIdFromUrl(block.props.url))?.extension}` } : block.props, ...(block.children ? { children: publicBlocks(block.children, assets) } : {}) }));
+  return blocks.map((block) => ({ ...block, props: ['image', 'imageText', 'pageBackground'].includes(block.type) && block.props.url ? { ...block.props, url: `assets/${assetIdFromUrl(block.props.url)}.${assets.get(assetIdFromUrl(block.props.url))?.extension}` } : block.props, ...(block.children ? { children: publicBlocks(block.children, assets) } : {}) }));
 }
 export function imageType(bytes) {
   const b = new Uint8Array(bytes);

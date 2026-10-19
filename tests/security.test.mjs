@@ -14,6 +14,28 @@ import { publish } from '../server/publication.mjs';
 import { deletionSelection } from '../shared/document-selection.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
 
+test('背景素材保持私有直到显式发布，位置与模糊可恢复且后续草稿不影响公开页', async t => {
+  const f = await fixture(t); const d = await f.create(f.editor, { title: '背景检查', kind: 'reference' });
+  const png = Uint8Array.from([137,80,78,71,13,10,26,10,0,0]);
+  const image = await (await f.as(f.editor, '/api/assets', 'POST', png)).json();
+  const content = [{ type: 'pageBackground', props: { url: image.url, blur: 8, opacity: 35, positionX: 70 } }, { type: 'image', props: { url: image.url, previewWidth: 240, imageOffset: 37 } }, ...blocks('文章')];
+  const save = await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: 1, blocks: content });
+  assert.equal(save.status, 200, await save.clone().text());
+  assert.equal((await f.req(`/assets/${image.id}.png`)).status, 404);
+  const saved = (await save.json()).document; assert.equal(saved.blocks[1].props.imageOffset, 37);
+  assert.equal((await f.req('/api/public/catalog')).status, 200);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: saved.version })).status, 200);
+  const publicDoc = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.match(publicDoc.blocks[0].props.url, /^assets\//); assert.equal(publicDoc.blocks[0].props.blur, 8);
+  content[0].props.blur = 19;
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: saved.version, blocks: content })).status, 200);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents[0].blocks[0].props.blur, 8);
+  const revisions = (await (await f.as(f.editor, `/api/documents/${d.id}/history`)).json()).revisions;
+  const restore = await f.as(f.editor, `/api/documents/${d.id}/restore`, 'POST', { revisionId: revisions[0].id, version: saved.version + 1 });
+  assert.equal(restore.status, 200); assert.equal((await restore.json()).document.blocks[0].props.blur, 8);
+});
+
 test('站主排序同步公开顺序，保留私有改稿、未发布文档、内容时间与所属目录', async t => {
   const f = await fixture(t); const folder = await f.create(f.owner, { title: '指南目录', kind: 'folder' });
   const a = await f.create(f.owner, { title: 'A', parentId: folder.id });

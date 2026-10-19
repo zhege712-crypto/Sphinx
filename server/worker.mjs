@@ -11,6 +11,7 @@ import { contributorsDraft } from './contributors.mjs';
 import { directoryStamp } from '../shared/directory-order.mjs';
 import { prepareDirectoryOrder } from './directory-order.mjs';
 import { deletionSelection } from '../shared/document-selection.mjs';
+import { authorsRoute } from './authors.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
@@ -81,6 +82,8 @@ async function route(request, env) {
   if (!path.startsWith('/api/')) return env.ASSETS ? env.ASSETS.fetch(request) : new Response('Not found', { status: 404 });
   const aboutInitialization = ['/api/project/initialize', '/api/contributors/initialize'].includes(path);
   const user = await authorize(request, env, path.startsWith('/api/members') || path === '/api/audit' || path === '/api/reconcile' || path === '/api/references/initialize' || aboutInitialization);
+  const authorResponse = await authorsRoute(request, env, user, body);
+  if (authorResponse) return authorResponse;
   if (aboutInitialization && request.method === 'POST') {
     await writable(env);
     const contributors = path === '/api/contributors/initialize';
