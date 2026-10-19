@@ -1,0 +1,15 @@
+/* Match the editor: many CJK system fonts have no real italic or bold face. */
+.reader-body {
+  font-synthesis: style weight;
+}
+
+.reader-body em { font-style: italic; }
+.reader-body strong { font-weight: 700; }
+.reader-body u { text-decoration-line: underline; }
+.reader-body s { text-decoration-line: line-through; }
+.reader-inline { white-space: pre-wrap; }
+
+/* Preserve inline highlights and bold/italic inheritance inside code spans. */
+.reader-inline[style*="background-color"] code {
+  background: transparent;
+}

@@ -245,6 +245,35 @@ test('普通伙伴可发布，之后的草稿修改不会泄露到公开版本',
   const c = await (await f.req('/api/public/catalog')).json(); assert.equal(c.documents[0].title, '公开标题'); assert.equal(c.documents[0].updatedAt, '2026-10-16T08:30:00.000Z'); assert.ok(!JSON.stringify(c).includes('秘密'));
   assert.equal((await f.as(f.owner, `/api/documents/${d.id}/publish`, 'POST', { version: 2 })).status, 409);
 });
+test('文字格式、段落与表格样式在保存和发布后完整保留，私有改稿不改变公开版本', async t => {
+  const f = await fixture(t);
+  const marks = { bold: true, italic: true, underline: true, strike: true, textColor: 'blue', backgroundColor: 'yellow' };
+  const content = [
+    { type: 'text', text: '中文斜体与组合格式\n两个  空格 ', styles: marks },
+    { type: 'text', text: 'npm run build', styles: { code: true } },
+    { type: 'link', href: 'https://example.com/', content: [{ type: 'text', text: '链接内的格式', styles: { italic: true, underline: true, textColor: 'red' } }] },
+  ];
+  const input = [
+    { type: 'paragraph', props: { textAlignment: 'center', textColor: 'blue', backgroundColor: 'yellow' }, content },
+    { type: 'paragraph', content: [] },
+    { type: 'bulletListItem', props: { textColor: 'green' }, content },
+    { type: 'table', content: { type: 'tableContent', headerRows: 1, columnWidths: [240, 180], rows: [{ cells: ['标题', '格式'] }, { cells: [{ type: 'tableCell', props: { textAlignment: 'right', textColor: 'purple', backgroundColor: 'green' }, content }, '第二格'] }] } },
+    { type: 'toggleListItem', content: '折叠区域', children: [{ type: 'paragraph', content }] },
+  ];
+  const expected = sanitizeDocument(input);
+  for (const kind of ['document', 'reference']) {
+    const d = await f.create(f.owner, { title: `排版检查 ${kind}`, kind });
+    const save = await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: 1, blocks: input });
+    assert.equal(save.status, 200); assert.deepEqual((await save.json()).document.blocks, expected);
+    assert.equal((await f.as(f.owner, `/api/documents/${d.id}/publish`, 'POST', { version: 2 })).status, 200);
+    const catalog = (await (await f.req('/api/public/catalog')).json()).documents;
+    assert.deepEqual(catalog.find(row => row.id === d.id).blocks, expected);
+    await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title: d.title, version: 2, blocks: blocks('仅草稿修改') });
+    const after = (await (await f.req('/api/public/catalog')).json()).documents;
+    assert.deepEqual(after.find(row => row.id === d.id).blocks, expected);
+  }
+});
+
 test('草稿图片保密，真实图片格式验证，明确发布后才允许匿名访问', async (t) => {
   const f = await fixture(t); const d = await f.create();
   const fake = new TextEncoder().encode('<svg onload="evil()"></svg>'); assert.equal((await f.as(f.editor, '/api/assets', 'POST', fake)).status, 400);
