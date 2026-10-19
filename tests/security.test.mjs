@@ -11,6 +11,7 @@ import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID } from '../shared/project
 import { directoryStamp } from '../shared/directory-order.mjs';
 import { prepareDirectoryOrder } from '../server/directory-order.mjs';
 import { publish } from '../server/publication.mjs';
+import { deletionSelection } from '../shared/document-selection.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
 
 test('站主排序同步公开顺序，保留私有改稿、未发布文档、内容时间与所属目录', async t => {
@@ -263,6 +264,44 @@ test('删除必须申请且只有站主可批准，包含子文档，公开目�
   assert.equal((await f.as(f.owner, `/api/reviews/${id}/approve`, 'POST')).status, 200);
   assert.equal((await f.as(f.editor, `/api/documents/${child.id}`)).status, 404); assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
 });
+test('删除确认列全多层子文档，站主确认走审核记录，保留无关文档和图片库', async t => {
+  const f = await fixture(t);
+  const folder = await f.create(f.owner, { title: '待删目录', kind: 'folder' });
+  const child = await f.create(f.owner, { title: '子文档', parentId: folder.id });
+  const grandchild = await f.create(f.owner, { title: '孙文档', parentId: child.id });
+  const kept = await f.create(f.owner, { title: '保留文档' });
+  const png = Uint8Array.from([137,80,78,71,13,10,26,10,0,0]);
+  const asset = await (await f.as(f.owner, '/api/assets', 'POST', png)).json();
+  await f.as(f.owner, `/api/documents/${child.id}`, 'PUT', { title: child.title, version: 1, blocks: [{ type: 'image', props: { url: asset.url } }] });
+  await f.as(f.owner, `/api/documents/${child.id}/publish`, 'POST', { version: 2 });
+  const docs = (await (await f.as(f.owner, '/api/documents')).json()).documents;
+  const preview = deletionSelection(docs, [folder.id, child.id]);
+  assert.deepEqual(new Set(preview.map(d => d.id)), new Set([folder.id, child.id, grandchild.id]));
+  const response = await f.as(f.owner, '/api/reviews', 'POST', { action: 'delete', ids: [folder.id], tree: directoryStamp(docs) });
+  assert.equal(response.status, 201); const review = await response.json();
+  const record = (await (await f.as(f.owner, '/api/reviews')).json()).reviews.find(r => r.id === review.id);
+  assert.deepEqual(new Set(record.payload.ids), new Set(preview.map(d => d.id)));
+  assert.equal((await f.as(f.owner, `/api/reviews/${review.id}/approve`, 'POST')).status, 200);
+  const remaining = (await (await f.as(f.owner, '/api/documents')).json()).documents;
+  assert.deepEqual(remaining.map(d => d.id), [kept.id]);
+  assert.equal((await f.as(f.owner, asset.url)).status, 200);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+  const resolved = await f.DB.prepare('SELECT status,resolved_by FROM reviews WHERE id=?').bind(review.id).first();
+  assert.equal(resolved.status, 'approved'); assert.equal(resolved.resolved_by, 'owner');
+});
+
+test('删除预览过期时拒绝创建申请，避免未展示的新子文档被连带删除', async t => {
+  const f = await fixture(t); const folder = await f.create(f.owner, { title: '目录' });
+  const docs = (await (await f.as(f.owner, '/api/documents')).json()).documents;
+  const child = await f.create(f.editor, { title: '后来新增', parentId: folder.id });
+  for (const user of [f.owner, f.editor]) {
+    const response = await f.as(user, '/api/reviews', 'POST', { action: 'delete', ids: [folder.id], tree: directoryStamp(docs) });
+    assert.equal(response.status, 409);
+  }
+  assert.equal((await (await f.as(f.owner, '/api/reviews')).json()).reviews.length, 0);
+  assert.equal((await f.as(f.owner, `/api/documents/${child.id}`)).status, 200);
+});
+
 test('过期审核不能删除申请之后改过的文章或新加入的子文档', async (t) => {
   const f = await fixture(t); const d = await f.create();
   const { id } = await (await f.as(f.editor, '/api/reviews', 'POST', { action: 'delete', ids: [d.id] })).json();

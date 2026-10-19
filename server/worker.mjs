@@ -10,6 +10,7 @@ import { PROJECT_DOCUMENT_ID, CONTRIBUTORS_DOCUMENT_ID } from '../shared/project
 import { contributorsDraft } from './contributors.mjs';
 import { directoryStamp } from '../shared/directory-order.mjs';
 import { prepareDirectoryOrder } from './directory-order.mjs';
+import { deletionSelection } from '../shared/document-selection.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
@@ -157,8 +158,8 @@ async function route(request, env) {
       return json({ id }, 201);
     }
     if (!['delete', 'bulkMove'].includes(input.action) || !Array.isArray(input.ids) || !input.ids.length || input.ids.length > 100 || input.ids.some((id) => !uuid(id) || !rows.some((r) => r.id === id))) throw new HttpError(400, '请选择需要审核的文档');
-    const selected = new Set(input.ids);
-    if (input.action === 'delete') { let changed = true; while (changed) { changed = false; for (const r of rows) if (selected.has(r.parent_id) && !selected.has(r.id)) { selected.add(r.id); changed = true; } } }
+    if (input.action === 'delete' && input.tree !== undefined && input.tree !== treeStamp(rows)) throw new HttpError(409, '删除确认后内容或目录已变化，请关闭窗口并重新选择，核对最新的子文档');
+    const selected = new Set(input.action === 'delete' ? deletionSelection(rows, input.ids).map(row => row.id) : input.ids);
     const parentId = input.parentId || null;
     if (input.action === 'bulkMove') for (const id of selected) { await parentCheck(env, id, parentId); if (selected.has(parentId)) throw new HttpError(400, '目标目录不能属于待移动的文档'); }
     const payload = { ids: [...selected], parentId, titles: rows.filter((r) => selected.has(r.id)).map((r) => r.title), tree: treeStamp(rows) };
