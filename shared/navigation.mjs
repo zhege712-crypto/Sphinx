@@ -1,5 +1,5 @@
 const idPattern = /^[a-f0-9-]{36}$/;
-const views = new Set(['home', 'documents', 'reviews', 'members', 'assets', 'references', 'settings', 'about']);
+const views = new Set(['home', 'documents', 'reviews', 'members', 'assets', 'references', 'settings', 'about', 'authors']);
 export function parseRoute(hash = '#/read') {
   const parts = hash.split('?')[0].split('/');
   if (parts[1] === 'write') {

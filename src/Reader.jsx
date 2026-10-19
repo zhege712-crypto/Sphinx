@@ -7,6 +7,7 @@ import { WebsiteCard } from './WebsiteCard';
 import CopyBlock from './CopyBlock';
 import CodeDemo from './CodeDemo';
 import { richTextStyle } from '../shared/rich-text.mjs';
+import { imagePositionStyle } from '../shared/image-position.mjs';
 import './reader-formatting.css';
 export const inlineText = (value) => typeof value === 'string' ? value : Array.isArray(value) ? value.map(inlineText).join('') : value?.text || inlineText(value?.content || []);
 export function headings(blocks) { return (blocks || []).flatMap((b) => [...(b.type === 'heading' ? [{ id: b.id, text: inlineText(b.content), level: b.props?.level || 2 }] : []), ...headings(b.children)]); }
@@ -30,6 +31,7 @@ export function Reader({ blocks, privatePreview = false }) {
       return <List key={group.blocks[0].id || index} start={List === 'ol' ? group.start : undefined}>{group.blocks.map((item, i) => <li key={item.id || i} id={`block-${item.id}`} style={richTextStyle(item.props)}><Inline value={item.content} />{item.children?.length ? <Reader blocks={item.children} privatePreview={privatePreview} /> : null}</li>)}</List>;
     }
     const b = group.block;
+    if (b.type === 'pageBackground') return null;
     const content = <Inline value={b.content} />;
     const nested = b.children?.length ? <Reader blocks={b.children} privatePreview={privatePreview} /> : null;
     const key = b.id || index;
@@ -43,7 +45,7 @@ export function Reader({ blocks, privatePreview = false }) {
     if (b.type === 'image' || b.type === 'imageText') {
       const url = b.props?.url || '';
       const safe = privatePreview ? /^\/api\/assets\/[a-f0-9-]{36}$/.test(url) : /^assets\/[a-f0-9-]{36}\.(png|jpg|gif|webp)$/.test(url);
-      const figure = <figure style={b.type === 'image' ? { width: b.props.previewWidth ? Math.min(1600, Math.max(64, b.props.previewWidth)) : undefined, maxWidth: '100%', marginLeft: b.props.textAlignment === 'right' || b.props.textAlignment === 'center' ? 'auto' : 0, marginRight: b.props.textAlignment === 'center' ? 'auto' : 0 } : undefined}><img src={url} alt={b.props.name || b.props.caption || '文章配图'} loading="lazy" />{b.props.caption && <figcaption>{b.props.caption}</figcaption>}</figure>;
+      const figure = <figure style={b.type === 'image' ? imagePositionStyle(b.props) : undefined}><img src={url} alt={b.props.name || b.props.caption || '文章配图'} loading="lazy" />{b.props.caption && <figcaption>{b.props.caption}</figcaption>}</figure>;
       if (b.type === 'imageText') return <div key={key} {...props} className="image-text-layout" data-side={b.props.side === 'right' ? 'right' : 'left'} style={{ ...props.style, '--image-width': `${Math.max(25, Math.min(65, b.props.imageWidth || 40))}%` }}>{safe ? figure : null}<div className="image-text-copy">{nested}</div></div>;
       return safe ? <React.Fragment key={key}><div {...props}>{figure}</div>{nested}</React.Fragment> : nested;
     }
