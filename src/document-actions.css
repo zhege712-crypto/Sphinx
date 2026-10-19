@@ -1,0 +1,17 @@
+.tree-item-actions{position:relative;flex-shrink:0;margin-left:auto}
+.tree-item-actions>.icon-button{width:28px;min-height:30px;padding:3px;color:#687385;opacity:0}
+.tree-row:hover .tree-item-actions>.icon-button,.tree-row:focus-within .tree-item-actions>.icon-button,.tree-item-actions:has(:popover-open)>.icon-button{opacity:1}
+.tree-row>.tree-document{min-width:0;flex:1}
+.tree-document-menu{position:fixed;inset:auto;margin:0;width:190px;z-index:20}
+.tree-document-menu:not(:popover-open){display:none}
+.document-row-actions{white-space:nowrap;text-align:right}
+.document-row-actions button{font-size:12px;min-height:32px;padding:5px 9px}
+.delete-documents-dialog{width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto}
+.delete-document-list{list-style:none;margin:18px 0;padding:0;max-height:280px;overflow:auto;border-top:1px solid var(--line)}
+.delete-document-list li{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line);font-size:14px}
+.delete-document-list li>svg{flex-shrink:0;color:var(--muted)}
+.delete-document-list li>span{flex:1;min-width:0;overflow-wrap:anywhere}
+.delete-document-list small{flex-shrink:0;font-size:12px;color:var(--muted)}
+.delete-documents-dialog .delete-document-summary{font-size:12px;line-height:1.8;color:var(--muted)}
+.delete-documents-dialog .delete-document-error{color:#a1373b;overflow-wrap:anywhere}
+@media(max-width:900px){.tree-item-actions>.icon-button{opacity:1;width:36px;min-height:44px}.document-row-actions button{min-height:44px}.delete-documents-dialog{padding:20px}.delete-documents-dialog .dialog-actions{flex-wrap:wrap}}
