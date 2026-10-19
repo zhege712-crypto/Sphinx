@@ -336,3 +336,8 @@ Readers see a quiet bordered demonstration panel: a neutral header holds the tit
 ### Directory order
 
 A quiet 排序 action sits beside the directory heading. Its native modal offers a parent-directory selector and flat numbered rows, with a grip on the left and labeled up/down controls on the right. Pointer dragging and keyboard arrows on the grip share the same order; touch controls retain 44px targets. Pending changes lock the parent selector until save or reset. The owner sees 保存并应用顺序; collaborators see 提交排序审核. Error text remains in the dialog, and cancel preserves the existing directory. Contributors stay last and the alphabetic Reference index is unaffected.
+
+## 2026-10-19：Beta 标识
+
+- 品牌名称旁使用浅蓝底、小字号的 Beta 标识；阅读站、创作工作台和登录页共用。手机端或收起侧栏时在顶栏显示，避免导航隐藏后丢失版本状态。
+- 标识为静态文字，辅助技术读作 Beta 测试版，不增加交互或打断阅读。
