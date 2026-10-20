@@ -1,6 +1,7 @@
 import { collectAssets, publicBlocks, documentText } from '../shared/document.mjs';
 import { HttpError, now, queryAll, recordAudit } from './auth.mjs';
 import { compareDirectoryEntries, directoryStamp } from '../shared/directory-order.mjs';
+import { readValhalla } from '../shared/valhalla.mjs';
 
 const parse = (value) => value ? JSON.parse(value) : null;
 export async function publicCatalog(env) {
@@ -42,7 +43,9 @@ async function pushCatalog(env, catalog, assets, token) {
 }
 export async function publishedVersion(env, row) {
   const blocks = parse(row.draft);
-  const assetIds = collectAssets(blocks);
+  const evaluation = readValhalla(row.valhalla);
+  const evaluationBlocks = row.kind === 'reference' && evaluation.enabled ? evaluation.blocks : [];
+  const assetIds = collectAssets([...blocks, ...evaluationBlocks]);
   if (assetIds.length > 20) throw new HttpError(400, '单篇文档最多发布 20 张图片，请拆分章节');
   const assets = new Map();
   let totalSize = 0;
@@ -54,7 +57,7 @@ export async function publishedVersion(env, row) {
     totalSize += asset.size;
   }
   if (totalSize > 15 * 1024 * 1024) throw new HttpError(400, '单次发布图片总量应小于 15 MB，请压缩或拆分章节');
-  return { snapshot: { id: row.id, title: row.title, parentId: row.parent_id, position: row.position, kind: row.kind, version: row.version, updatedAt: row.updated_at, publishedAt: now(), blocks: publicBlocks(blocks, assets), text: documentText(blocks), tags: parse(row.tags || '[]') }, assets: [...assets.values()] };
+  return { snapshot: { id: row.id, title: row.title, parentId: row.parent_id, position: row.position, kind: row.kind, version: row.version, updatedAt: row.updated_at, publishedAt: now(), blocks: publicBlocks(blocks, assets), text: documentText(blocks), tags: parse(row.tags || '[]'), ...(row.kind === 'reference' ? { valhalla: { enabled: evaluation.enabled, blocks: publicBlocks(evaluationBlocks, assets), text: documentText(evaluationBlocks) } } : {}) }, assets: [...assets.values()] };
 }
 async function applyJob(env, job) {
   // Set-based updates keep approved subtree changes and image publication below

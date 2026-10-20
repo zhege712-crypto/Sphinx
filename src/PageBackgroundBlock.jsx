@@ -9,9 +9,9 @@ import './page-background.css';
 export const pageBackgroundBlock = createReactBlockSpec({ type: 'pageBackground', content: 'none', propSchema: { url: { default: '' }, name: { default: '' }, preset: { default: 'none', values: ['none', 'windows'] }, blur: { default: 0 }, opacity: { default: 25 }, positionX: { default: 50 }, positionY: { default: 50 }, enabled: { default: true } } }, { render: () => <span aria-hidden="true" /> })();
 const imagesIn = blocks => blocks.flatMap(block => [...(['image', 'imageText'].includes(block.type) && block.props?.url ? [{ url: block.props.url, name: block.props.name || block.props.caption || '文章图片' }] : []), ...imagesIn(block.children || [])]);
 
-export function BackgroundEditorBridge({ editor, documentId, title, kind, blocks, upload }) {
+export function BackgroundEditorBridge({ editor, documentId, title, kind, blocks, upload, section }) {
   const [open, setOpen] = useState(false);
-  const current = { id: documentId, title, kind, blocks };
+  const current = { id: documentId, title, kind, blocks, section };
   function update(props) {
     const old = editor.document.find(block => block.type === 'pageBackground');
     const clean = backgroundProps({ ...(pageBackground({ ...current, blocks: editor.document }) || backgroundDefaults), ...props });

@@ -11,7 +11,7 @@ export function pageBackground(document) {
   if (!document) return null;
   const authored = document.blocks?.find(block => block.type === 'pageBackground');
   if (authored) return { ...backgroundDefaults, ...authored.props };
-  return document.kind === 'reference' && document.title?.trim().toLocaleLowerCase() === 'windows' ? { ...backgroundDefaults, preset: 'windows', opacity: 65 } : null;
+  return document.section !== 'valhalla' && document.kind === 'reference' && document.title?.trim().toLocaleLowerCase() === 'windows' ? { ...backgroundDefaults, preset: 'windows', opacity: 65 } : null;
 }
 export function backgroundImage(props, privatePreview = false) {
   if (!props?.enabled) return '';

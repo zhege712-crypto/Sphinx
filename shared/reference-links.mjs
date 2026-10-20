@@ -1,5 +1,7 @@
 const idPattern = '[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}';
 const referenceLinkPattern = new RegExp(`^#/reference/(${idPattern})$`);
+const valhallaLinkPattern = new RegExp(`^#/valhalla/(${idPattern})$`);
+export const valhallaIdFromLink = value => typeof value === 'string' ? valhallaLinkPattern.exec(value)?.[1] : undefined;
 export const referenceIdFromLink = value => typeof value === 'string' ? referenceLinkPattern.exec(value)?.[1] : undefined;
 export function referenceHref(id) {
   const href = `#/reference/${id}`;

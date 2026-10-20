@@ -14,6 +14,63 @@ import { publish } from '../server/publication.mjs';
 import { deletionSelection } from '../shared/document-selection.mjs';
 const ORIGIN = 'http://127.0.0.1:5173';
 
+test('Valhalla 与原词条共用身份，草稿、发布、历史和取消同步均保留边界', async t => {
+  const f = await fixture(t), d = await f.create(f.editor, { kind: 'reference', title: '模型测试' });
+  const save = async (version, valhalla, title = d.title) => f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { title, version, blocks: blocks('Reference 正文'), ...(valhalla ? { valhalla } : {}) });
+  let response = await save(1, { enabled: true, blocks: blocks('首次评测') });
+  assert.equal(response.status, 200, await response.clone().text());
+  assert.equal((await (await f.as(f.editor, '/api/documents')).json()).documents.length, 1);
+  assert.equal((await f.req(`/api/documents/${d.id}`)).status, 401);
+  assert.equal((await (await f.req('/api/public/catalog')).json()).documents.length, 0);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: 2 })).status, 200);
+  let published = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.equal(published.valhalla.enabled, true); assert.match(published.valhalla.text, /首次评测/); assert.match(published.text, /Reference 正文/);
+  assert.equal((await save(2, { enabled: true, blocks: blocks('第二轮私有评测') }, '新模型名称')).status, 200);
+  assert.equal((await save(2, { enabled: true, blocks: blocks('过期覆盖') })).status, 409);
+  assert.doesNotMatch(JSON.stringify((await (await f.req('/api/public/catalog')).json())), /第二轮私有评测|新模型名称/);
+  const revisions = (await (await f.as(f.editor, `/api/documents/${d.id}/history`)).json()).revisions;
+  const restore = await f.as(f.editor, `/api/documents/${d.id}/restore`, 'POST', { revisionId: revisions[0].id, version: 3 });
+  assert.equal(restore.status, 200); assert.match(JSON.stringify((await restore.json()).document.valhalla.blocks), /首次评测/);
+  assert.equal((await save(4, { enabled: false, blocks: blocks('保留的评测草稿') })).status, 200);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: 5 })).status, 200);
+  published = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.deepEqual(published.valhalla, { enabled: false, blocks: [], text: '' });
+  // A browser opened before the upgrade must not erase evaluation content.
+  assert.equal((await save(5)).status, 200);
+  const draft = (await (await f.as(f.editor, `/api/documents/${d.id}`)).json()).document;
+  assert.equal(draft.valhalla.enabled, false); assert.match(JSON.stringify(draft.valhalla.blocks), /保留的评测草稿/);
+});
+
+test('Valhalla 图片仅在开启同步并显式发布后公开，非法设置和非词条被拒绝', async t => {
+  const f = await fixture(t), d = await f.create(f.editor, { kind: 'reference' }), article = await f.create();
+  const image = await (await f.as(f.editor, '/api/assets', 'POST', Uint8Array.from([137,80,78,71,13,10,26,10,0,0]))).json();
+  const valhalla = { enabled: false, blocks: [{ type: 'image', props: { url: image.url } }, ...blocks('私有图片评测')] };
+  const input = { title: d.title, version: 1, blocks: blocks('词条'), valhalla };
+  for (const invalid of [{ enabled: 'true', blocks: [] }, { enabled: true, blocks: [], secret: 'no' }, { enabled: true, blocks: [{ type: 'script' }] }]) assert.equal((await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { ...input, valhalla: invalid })).status, 400);
+  assert.equal((await f.as(f.editor, `/api/documents/${article.id}`, 'PUT', { ...input, title: article.title })).status, 400);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', input)).status, 200);
+  await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: 2 });
+  assert.equal((await f.req(`/assets/${image.id}.png`)).status, 404);
+  assert.doesNotMatch(JSON.stringify(await (await f.req('/api/public/catalog')).json()), /私有图片评测/);
+  valhalla.enabled = true;
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}`, 'PUT', { ...input, version: 2 })).status, 200);
+  assert.equal((await f.as(f.editor, `/api/documents/${d.id}/publish`, 'POST', { version: 3 })).status, 200);
+  const published = (await (await f.req('/api/public/catalog')).json()).documents[0];
+  assert.equal(published.valhalla.blocks[0].props.url, `assets/${image.id}.png`);
+  assert.equal((await f.req(`/assets/${image.id}.png`)).status, 200);
+});
+
+test('Valhalla 数据库迁移不改变现有词条、公开内容和版本', async t => {
+  const DB = sqliteAdapter(); t.after(() => DB.close());
+  const schema = (await readFile(new URL('../server/schema.sql', import.meta.url), 'utf8')).replaceAll(', valhalla TEXT NOT NULL DEFAULT \'{"enabled":false,"blocks":[]}\'', '');
+  DB.exec(schema);
+  await DB.prepare('INSERT INTO documents(id,title,draft,published,version,updated_at,updated_by) VALUES(?,?,?,?,?,?,?)').bind('original', '已有词条', '[]', '{"title":"原有快照"}', 7, 'original-time', 'owner').run();
+  DB.exec(await readFile(new URL('../server/migrations/0003-valhalla.sql', import.meta.url), 'utf8'));
+  const row = await DB.prepare('SELECT * FROM documents WHERE id=?').bind('original').first();
+  assert.equal(row.title, '已有词条'); assert.equal(row.published, '{"title":"原有快照"}'); assert.equal(row.version, 7); assert.equal(row.updated_at, 'original-time');
+  assert.deepEqual(JSON.parse(row.valhalla), { enabled: false, blocks: [] });
+});
+
 test('背景素材保持私有直到显式发布，位置与模糊可恢复且后续草稿不影响公开页', async t => {
   const f = await fixture(t); const d = await f.create(f.editor, { title: '背景检查', kind: 'reference' });
   const png = Uint8Array.from([137,80,78,71,13,10,26,10,0,0]);

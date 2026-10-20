@@ -301,6 +301,16 @@ Website cards are rich-content blocks inside term pages or ordinary documents. E
 
 Build credits are quieter (11px), with the label “网页构建支持” and OpenAI and DeepSeek links. Their SVG images shrink to (15px) inside marks (20px). Credits appear at the end of each dictionary index and term page. External website and credit links open in a new tab with the corresponding safe relationship attributes; term names navigate within the site. Keep the dictionary, rich-body cards, and credits inside the established document grammar.
 
+### Valhalla Linked Evaluations
+
+Reference remains the dictionary; Valhalla adds linked model-update evaluations within the same Feishu-like reading and writing surfaces. Standalone reader and writer indexes begin with Reference / Valhalla tabs. Valhalla reuses the plain term rows, A–Z/pinyin, tags and search, with its own remembered index state and evaluation-body search. It has no independent creation action: its empty state points to the existing Reference editor. No model entries, performance scores or benchmark claims are generated.
+
+The Reference editor places “同步到 Valhalla” above the tags and body, using a native checkbox between fine rules with quiet publication guidance. Authors opt in, follow the counterpart card, edit the independent evaluation body with the existing rich-content tools, then explicitly publish. Both sides share the term ID, title, tags, version and publication state; the evaluation title is read-only. Saving retains a private draft, while publishing exposes both saved bodies together. Disabling sync preserves the evaluation draft; publishing that change removes its public entry and content.
+
+Each enabled term has one automatic counterpart card above its title, providing reciprocal same-site navigation between Reference and Valhalla. The card uses Navigation Gray, a fine divider-colored border, the existing floating radius (7px), padding (16px 18px), a small Lucide icon, the destination name and term title, and quiet supporting text. Hover adds blue border emphasis and a pale-blue fill. Index tabs use interface text (14px), a blue underline and `aria-current` for the selected destination. The extension preserves white paper, cool gray and blue, existing controls and document proportions. At widths up to (600px), card spacing tightens, long titles wrap, and tabs and the checkbox label retain (44px) targets.
+
+Recovery restores only the current side's body. When the server version has changed, the banner explains that the latest title, tags, sync setting and counterpart body are preserved. The finish review passed after this stale-recovery protection was fixed; all 79 tests passed. See `docs/valhalla.md` for publication, recovery and route details.
+
 ## Do's and Don'ts
 
 ### Footer notice and embedded index
