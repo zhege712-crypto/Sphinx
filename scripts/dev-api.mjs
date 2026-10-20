@@ -10,6 +10,7 @@ DB.exec(await readFile(new URL('../server/schema.sql', import.meta.url), 'utf8')
 for (const table of ['documents', 'revisions']) {
   const columns = await DB.prepare(`PRAGMA table_info(${table})`).all();
   if (!columns.results.some(column => column.name === 'tags')) DB.exec(`ALTER TABLE ${table} ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'`);
+  if (!columns.results.some(column => column.name === 'valhalla')) DB.exec(`ALTER TABLE ${table} ADD COLUMN valhalla TEXT NOT NULL DEFAULT '{"enabled":false,"blocks":[]}'`);
 }
 const env = { DB, FILES: await fileBucket('.local/assets'), LOCAL_DEMO: true, OWNER_GITHUB_ID: 'local-owner', APP_ORIGIN: 'http://127.0.0.1:5173', SITE_TITLE: 'Sphinx' };
 if (!await DB.prepare('SELECT id FROM documents LIMIT 1').first()) {

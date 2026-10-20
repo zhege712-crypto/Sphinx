@@ -12,11 +12,12 @@ import { directoryStamp } from '../shared/directory-order.mjs';
 import { prepareDirectoryOrder } from './directory-order.mjs';
 import { deletionSelection } from '../shared/document-selection.mjs';
 import { authorsRoute } from './authors.mjs';
+import { readValhalla, safeValhalla } from '../shared/valhalla.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
 const unlocked = "NOT EXISTS(SELECT 1 FROM locks WHERE name='publication' AND expires_at>?) AND NOT EXISTS(SELECT 1 FROM publication_jobs WHERE status IN ('pending','committed'))";
-const meta = (r) => ({ id: r.id, title: r.title, parentId: r.parent_id, kind: r.kind, position: r.position, version: r.version, publishedVersion: r.published_version, publishedAt: r.published_at, updatedAt: r.updated_at, updatedBy: r.updated_by, tags: parse(r.tags || '[]'), text: documentText(parse(r.draft)) });
+const meta = (r) => ({ id: r.id, title: r.title, parentId: r.parent_id, kind: r.kind, position: r.position, version: r.version, publishedVersion: r.published_version, publishedAt: r.published_at, updatedAt: r.updated_at, updatedBy: r.updated_by, tags: parse(r.tags || '[]'), text: documentText(parse(r.draft)), valhalla: { enabled: readValhalla(r.valhalla).enabled, text: documentText(readValhalla(r.valhalla).blocks) } });
 const rowFor = async (env, id) => { const r = await env.DB.prepare('SELECT * FROM documents WHERE id=? AND archived=0').bind(id).first(); if (!r) throw new HttpError(404, '文档不存在或已被移除'); return r; };
 export const treeStamp = directoryStamp;
 async function writable(env) {
@@ -54,16 +55,18 @@ async function save(env, user, id, input) {
   const tags = JSON.stringify(safeTags(input.tags === undefined ? parse(row.tags || '[]') : input.tags));
   if (row.kind !== 'reference' && parse(tags).length) throw new InputError('仅 Reference 词条支持标签');
   const draft = JSON.stringify(sanitizeDocument(input.blocks));
-  await assertAssets(env, parse(draft));
+  const valhalla = JSON.stringify(safeValhalla(input.valhalla === undefined ? readValhalla(row.valhalla) : input.valhalla, row.kind));
+  if (draft.length + valhalla.length > 350000) throw new InputError('词条与 Valhalla 评测内容过大，请精简或拆分内容');
+  await assertAssets(env, [...parse(draft), ...parse(valhalla).blocks]);
   if (input.version !== row.version) throw new HttpError(409, '另一位伙伴已更新这篇文档。请保留当前内容，再重新加载最新版本');
   const time = now();
   // Snapshot and compare-and-swap run in one D1 transaction. No publication may overlap a save.
   const results = await env.DB.batch([
-    env.DB.prepare(`INSERT INTO revisions(id,document_id,title,draft,tags,version,actor,created_at) SELECT ?,id,title,draft,tags,version,?,? FROM documents WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(crypto.randomUUID(), user.id, time, id, input.version, Date.now()),
-    env.DB.prepare(`UPDATE documents SET title=?,draft=?,tags=?,version=version+1,updated_at=?,updated_by=? WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(title, draft, tags, time, user.id, id, input.version, Date.now()),
+    env.DB.prepare(`INSERT INTO revisions(id,document_id,title,draft,tags,valhalla,version,actor,created_at) SELECT ?,id,title,draft,tags,valhalla,version,?,? FROM documents WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(crypto.randomUUID(), user.id, time, id, input.version, Date.now()),
+    env.DB.prepare(`UPDATE documents SET title=?,draft=?,tags=?,valhalla=?,version=version+1,updated_at=?,updated_by=? WHERE id=? AND version=? AND archived=0 AND ${unlocked}`).bind(title, draft, tags, valhalla, time, user.id, id, input.version, Date.now()),
   ]);
   if (!results[1].meta.changes) throw new HttpError(409, '保存时文档状态已变化，请保留内容后重新加载');
-  return json({ document: { ...meta(await rowFor(env, id)), blocks: parse(draft) } });
+  return json({ document: { ...meta(await rowFor(env, id)), blocks: parse(draft), valhalla: parse(valhalla) } });
 }
 async function route(request, env) {
   const path = new URL(request.url).pathname;
@@ -120,13 +123,13 @@ async function route(request, env) {
   if (docMatch) {
     const [, id, action] = docMatch;
     const row = await rowFor(env, id);
-    if (!action && request.method === 'GET') return json({ document: { ...meta(row), blocks: parse(row.draft) } });
+    if (!action && request.method === 'GET') return json({ document: { ...meta(row), blocks: parse(row.draft), valhalla: readValhalla(row.valhalla) } });
     if (!action && request.method === 'PUT') return save(env, user, id, await body(request));
     if (action === 'history' && request.method === 'GET') return json({ revisions: await queryAll(env, 'SELECT id,title,version,actor,created_at FROM revisions WHERE document_id=? ORDER BY version DESC LIMIT 50', id) });
     if (action === 'restore' && request.method === 'POST') {
       const input = await body(request); const revision = await env.DB.prepare('SELECT * FROM revisions WHERE document_id=? AND id=?').bind(id, input.revisionId).first();
       if (!revision) throw new HttpError(404, '历史版本不存在');
-      return save(env, user, id, { version: input.version, title: revision.title, blocks: parse(revision.draft), tags: parse(revision.tags || '[]') });
+      return save(env, user, id, { version: input.version, title: revision.title, blocks: parse(revision.draft), tags: parse(revision.tags || '[]'), valhalla: readValhalla(revision.valhalla) });
     }
     if (action === 'publish' && request.method === 'POST') {
       const input = await body(request); if (input.version !== row.version) throw new HttpError(409, '文档已更新，请先加载最新版本再发布');

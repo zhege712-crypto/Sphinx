@@ -30,5 +30,9 @@ test('创作页历史区分具体文档、词条和管理页面，返回只接�
   assert.equal(parseRoute('#/write/documents').view, 'documents');
   assert.equal(parseRoute('#/write/reference').view, 'references');
   assert.equal(parseRoute(documentRoute({ id, kind: 'reference' })).id, id);
+  assert.deepEqual(parseRoute(`#/write/valhalla/${id}`), { writing: true, view: 'editor', id, section: 'valhalla' });
+  assert.equal(parseRoute('#/valhalla').view, 'valhalla');
+  assert.equal(documentRoute({ id, kind: 'reference', section: 'valhalla' }), `#/write/valhalla/${id}`);
+  assert.equal(safeReturn(`#/valhalla/${id}`), true);
   for (const value of ['https://example.com/', '//example.com', 'javascript:alert(1)', '#/read/../../write']) assert.equal(safeReturn(value), false);
 });

@@ -7,11 +7,11 @@ import './page-background.css';
 
 export default function PageBackground({ document, privatePreview = false }) {
   const settings = pageBackground(document);
-  const key = `sphinx:background-hidden:${document?.id}`;
+  const key = `sphinx:background-hidden:${document?.id}${document?.section === 'valhalla' ? ':valhalla' : ''}`;
   const [hidden, setHidden] = useState(() => { try { return localStorage.getItem(key) === '1'; } catch { return false; } });
   const [failed, setFailed] = useState(false);
   const route = parseRoute(location.hash);
-  const inScope = route.writing ? route.view === 'editor' && (!route.id || route.id === document?.id) : route.view === 'reader' ? !route.id || route.id === document?.id : route.view === 'references' && !!route.id && route.id === document?.id;
+  const inScope = route.writing ? route.view === 'editor' && (!route.id || route.id === document?.id) : route.view === 'reader' ? !route.id || route.id === document?.id : ['references', 'valhalla'].includes(route.view) && !!route.id && route.id === document?.id;
   const image = inScope ? backgroundImage(settings, privatePreview) : '';
   const active = !!image && !hidden && !failed;
   useEffect(() => { setFailed(false); }, [image]);
