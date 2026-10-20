@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { boundaryForScroll, boundaryWords } from '../shared/scroll-boundary.mjs';
 import './scroll-boundary.css';
+import BoundaryWordCloud from './BoundaryWordCloud';
 
 const scrollerSelector = '.document-column, .reference-page, .reading-home, .management';
 function nestedScroller(target, scroller) {
@@ -99,9 +100,7 @@ export default function ScrollBoundary({ children, routeKey, entries }) {
     {children}
     <div className="scroll-boundary-scene" aria-hidden="true">
       <div className="scroll-boundary-message"><span className="scroll-boundary-face">ฅ(˶•̀ᴗ•́˶)ฅ</span><p>真的没有更多了，请继续耕耘当下喵</p></div>
-      <div className="scroll-boundary-cloud">{words.map((word, index) => <span key={word} className={`boundary-word boundary-word-${index}`}>{word}</span>)}</div>
-      <div className="scroll-boundary-soften scroll-boundary-soften-top" />
-      <div className="scroll-boundary-soften scroll-boundary-soften-bottom" />
+      <div className="scroll-boundary-cloud"><BoundaryWordCloud words={words} /></div>
     </div>
   </div>;
 }

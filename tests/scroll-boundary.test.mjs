@@ -21,9 +21,10 @@ test('word cloud uses published Reference titles only, deduplicates and bounds i
     { kind: 'reference', title: 'private draft' },
     { kind: 'document', publishedVersion: 1, title: 'unrelated article' },
   ]);
-  assert.equal(words[0], 'Windows');
-  assert.equal(words.length, 12);
-  assert.equal(new Set(words).size, 12);
+  assert.equal(words[0], 'Sphinx');
+  assert.equal(words[1], 'Windows');
+  assert.ok(words.length >= 40 && words.length <= 80);
+  assert.equal(new Set(words).size, words.length);
   assert.ok(!words.includes('private draft'));
   assert.ok(!words.includes('unrelated article'));
   assert.equal(boundaryWords([])[0], 'Sphinx');
