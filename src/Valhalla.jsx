@@ -2,11 +2,6 @@ import { ArrowUpRight, BookOpenText, Swords } from 'lucide-react';
 import { hasValhalla } from '../shared/valhalla.mjs';
 import './valhalla.css';
 
-export function KnowledgeTabs({ writing, valhalla }) {
-  const prefix = writing ? '#/write/' : '#/';
-  return <nav className="knowledge-tabs" aria-label="Reference 与模型评测"><a href={`${prefix}reference`} aria-current={!valhalla ? 'page' : undefined}><BookOpenText size={16} />Reference</a><a href={`${prefix}valhalla`} aria-current={valhalla ? 'page' : undefined}><Swords size={16} />Valhalla</a></nav>;
-}
-
 export function RelatedKnowledge({ document, writing = false, valhalla = false }) {
   if (!hasValhalla(document)) return null;
   const Icon = valhalla ? BookOpenText : Swords;
