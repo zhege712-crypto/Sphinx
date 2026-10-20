@@ -6,33 +6,17 @@ html, body { overscroll-behavior-y: none; }
 .scroll-boundary-scene { position: absolute; left: var(--boundary-left, 0px); top: var(--boundary-top, 0px); width: var(--boundary-width, 100%); height: var(--boundary-height, 100%); z-index: 22; pointer-events: none; overflow: hidden; display: none; }
 [data-has-scroller] > .scroll-boundary-scene { display: block; }
 .scroll-boundary-message, .scroll-boundary-cloud { position: absolute; left: 0; width: 100%; opacity: 0; transition: opacity 180ms ease-out; color: #46536a; }
-.scroll-boundary-message { top: 0; min-height: 112px; padding: 18px 20px 27px; display: grid; align-content: center; justify-items: center; gap: 8px; background: linear-gradient(to bottom, rgb(245 247 250 / 97%) 66%, rgb(245 247 250 / 0%)); }
+.scroll-boundary-message { top: 0; min-height: 112px; padding: 18px 20px 27px; display: grid; align-content: center; justify-items: center; gap: 8px; background: linear-gradient(to bottom, rgb(245 247 250 / 88%) 60%, transparent); }
 .scroll-boundary-face { font-size: 24px; line-height: 1.2; font-synthesis: style; }
 .scroll-boundary-message p { font-size: 12px; line-height: 1.8; text-align: center; text-wrap: balance; }
-.scroll-boundary-cloud { bottom: 0; height: 176px; overflow: hidden; background: linear-gradient(to top, rgb(245 247 250 / 97%) 75%, rgb(245 247 250 / 0%)); }
-.scroll-boundary-message, .scroll-boundary-cloud { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.scroll-boundary-cloud { bottom: 0; height: 176px; overflow: hidden; background: linear-gradient(to top, rgb(245 247 250 / 88%) 65%, transparent); }
 .scroll-boundary-message { mask-image: linear-gradient(#000 70%, transparent); clip-path: inset(0 0 max(0px, calc(112px - var(--boundary-reveal, 0px))) 0); }
-.scroll-boundary-cloud { mask-image: linear-gradient(transparent, #000 24%); clip-path: inset(max(0px, calc(176px - var(--boundary-reveal, 0px))) 0 0); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, 1fr); align-items: center; justify-items: center; gap: 5px 24px; padding: 25px 26px 15px; }
-.boundary-word { font-weight: 550; font-size: 15px; line-height: 1.4; white-space: nowrap; min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; rotate: -17deg; }
-.boundary-word:nth-child(3n) { rotate: 12deg; }
-.boundary-word-0 { font-size: 28px; color: #245bdb; }
-.boundary-word-1 { font-size: 21px; }
-.boundary-word-2 { font-size: 18px; }
-.boundary-word-5, .boundary-word-8 { font-size: 13px; }
-.scroll-boundary-soften { position: absolute; left: 0; width: 100%; height: 28px; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); background: rgb(255 255 255 / 14%); }
-.scroll-boundary-soften-top { top: 0; mask-image: linear-gradient(#000, transparent); }
-.scroll-boundary-soften-bottom { bottom: 0; mask-image: linear-gradient(transparent, #000); }
-.scroll-boundary-frame:has(.editor-toolbar) .scroll-boundary-soften-top { display: none; }
+.scroll-boundary-cloud { clip-path: inset(max(0px, calc(176px - var(--boundary-reveal, 0px))) 0 0); }
+.boundary-word-canvas { display: block; width: 100%; height: 176px; }
 [data-boundary=top] .scroll-boundary-message, [data-boundary=bottom] .scroll-boundary-cloud { opacity: 1; }
-[data-boundary=top] .scroll-boundary-soften-top, [data-boundary=bottom] .scroll-boundary-soften-bottom { visibility: hidden; }
 @media(max-width:600px) {
   .scroll-boundary-face { font-size: 22px; }
   .scroll-boundary-message p { font-size: 11px; }
-  .scroll-boundary-cloud { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: repeat(4, 1fr); gap: 2px 15px; padding: 22px 15px 12px; }
-  .boundary-word { font-size: 12px; }
-  .boundary-word-0 { font-size: 20px; }
-  .boundary-word-1 { font-size: 17px; }
-  .boundary-word-2 { font-size: 14px; }
 }
 @media(prefers-reduced-motion:reduce) {
   .boundary-scroller, .scroll-boundary-message, .scroll-boundary-cloud { transition: none; }
