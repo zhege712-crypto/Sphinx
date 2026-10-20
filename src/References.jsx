@@ -6,7 +6,6 @@ import { Highlight } from './SearchResults';
 import { referenceInitial as initial, compareReferenceTitles, REFERENCE_LETTERS } from '../shared/reference-index.mjs';
 import { searchEntries, entryTags } from '../shared/search.mjs';
 import { tagKey } from '../shared/tags.mjs';
-import { KnowledgeTabs } from './Valhalla';
 export { BuildCredits, BrandMark } from './Brands';
 export const referenceStateKey = (writing, valhalla = false) => `sphinx-${valhalla ? 'valhalla' : 'reference'}:${writing ? 'writer' : 'reader'}`;
 export function selectReferenceTag(writing, tag, valhalla = false) {
@@ -47,7 +46,6 @@ export default function References({ entries = [], onOpen, onCreate, onInitializ
     return onOpen ? <button data-term-id={entry.id} className="dictionary-term" key={entry.id} onClick={() => { remember(); onOpen(entry.id); }}>{contents}</button> : <a data-term-id={entry.id} className="dictionary-term" key={entry.id} href={`#/${valhalla ? 'valhalla' : 'reference'}/${entry.id}`} onClick={remember}>{contents}</a>;
   }
   return <section ref={root} className={`references dictionary ${compact ? 'dictionary-compact' : ''}`} aria-labelledby={headingId}>
-    <>{!compact && <KnowledgeTabs writing={!!onOpen} valhalla={valhalla} />}</>
     <div className={`reference-heading ${compact ? 'reference-disclosure' : ''}`}><h2 id={headingId}>{compact ? <button type="button" className="reference-disclosure-toggle" aria-expanded={expanded} aria-controls={panelId} aria-label={`${expanded ? '收起' : '展开'}文章末尾的 Reference`} onClick={toggleExpanded}>{expanded ? <ChevronDown size={17} /> : <ChevronRight size={17} />}<span>Reference</span><span className="reference-fold-count">{entries.length} 个词条</span><span className="reference-fold-label">{expanded ? '收起' : '展开'}</span></button> : label}</h2>{expanded && <div className="dictionary-actions"><div className="reference-search"><Search size={16} /><input aria-label={`搜索 ${label} 词条`} maxLength={160} placeholder="名称、标签、正文或拼音" value={query} onChange={event => update({ query: event.target.value, letter: '' })} />{query && <button className="icon-button" aria-label={`清空 ${label} 搜索`} onClick={() => update({ query: '' })}><X size={14} /></button>}</div>{onCreate && <button className="primary" onClick={onCreate}><Plus size={15} />新建词条</button>}</div>}</div>
     <div id={panelId} hidden={!expanded}>
     {valhalla && <p className="valhalla-description">模型每次更新的评价、测试方法与性能记录。条目关联自 Reference。</p>}

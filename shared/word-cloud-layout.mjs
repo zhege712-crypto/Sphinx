@@ -1,22 +1,20 @@
-// Deterministic, bounded packing in a shallow ellipse. Sprites describe occupied
-// glyph pixels, rather than boxes, so smaller words can fill gaps between letters.
+// Fill the complete rectangular boundary, including its perimeter. Sprites use
+// glyph pixels so small words can fit between larger words without overlap.
 export function packWordCloud(words, width, height, spriteForWord) {
   if (width < 20 || height < 20) return [];
   const occupied = new Uint8Array(width * height), placed = [];
-  const radiusX = width / 2 - 2, radiusY = height / 2 - 2;
-  const inside = (x, y) => ((x - width / 2) / radiusX) ** 2 + ((y - height / 2) / radiusY) ** 2 <= 1;
-  for (let index = 0; index < Math.min(words.length, 80); index++) {
+  const anchors = [[.5, .5], [0, 0], [1, 1], [1, 0], [0, 1], [.5, 0], [.5, 1], [0, .5], [1, .5]];
+  function halton(value, base) { let result = 0, fraction = 1; while (value > 0) { fraction /= base; result += fraction * (value % base); value = Math.floor(value / base); } return result; }
+  for (let index = 0; index < Math.min(words.length, 240); index++) {
     let found = false;
     for (let shrink = 0; shrink < 3 && !found; shrink++) {
       const sprite = spriteForWord(words[index], index, shrink);
-      if (!sprite?.cells.length || sprite.width > width || sprite.height > height) continue;
+      if (!sprite?.cells.length || sprite.width > width - 4 || sprite.height > height - 4) continue;
       for (let step = 0; step < 1200; step++) {
-        const angle = step * 2.399963229728653 + index * .57;
-        const radius = Math.sqrt(step / 1200);
-        const x = Math.round(width / 2 + Math.cos(angle) * radius * radiusX - sprite.width / 2);
-        const y = Math.round(height / 2 + Math.sin(angle) * radius * radiusY - sprite.height / 2);
-        if (x < 0 || y < 0 || x + sprite.width > width || y + sprite.height > height) continue;
-        if (!inside(x, y) || !inside(x + sprite.width, y) || !inside(x, y + sprite.height) || !inside(x + sprite.width, y + sprite.height)) continue;
+        const seed = step + index * 127 + 1;
+        const [px, py] = step === 0 && anchors[index] ? anchors[index] : [halton(seed, 2), halton(seed, 3)];
+        const x = Math.round(2 + px * (width - sprite.width - 4));
+        const y = Math.round(2 + py * (height - sprite.height - 4));
         if (sprite.cells.some(([cx, cy]) => occupied[(y + cy) * width + x + cx])) continue;
         for (const [cx, cy] of sprite.cells) occupied[(y + cy) * width + x + cx] = 1;
         placed.push({ ...sprite, word: words[index], index, x, y }); found = true; break;

@@ -12,6 +12,11 @@ test('dense word cloud stays within its canvas and never overlaps occupied glyph
     const placements = packWordCloud(words, width, 80, sprite), occupied = new Set();
     assert.ok(placements.length > 25);
     assert.deepEqual(placements, packWordCloud(words, width, 80, sprite));
+    // Perimeter anchors must fill the four corners, not recreate an oval cluster.
+    assert.ok(placements.some(item => item.x <= 2 && item.y <= 2));
+    assert.ok(placements.some(item => item.x + item.width >= width - 2 && item.y + item.height >= 78));
+    assert.ok(placements.some(item => item.x + item.width >= width - 2 && item.y <= 2));
+    assert.ok(placements.some(item => item.x <= 2 && item.y + item.height >= 78));
     for (const item of placements) for (const [x, y] of item.cells) {
       const px = item.x + x, py = item.y + y, key = `${px},${py}`;
       assert.ok(px >= 0 && py >= 0 && px < width && py < 80);
