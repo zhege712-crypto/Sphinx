@@ -377,3 +377,9 @@ A quiet 排序 action sits beside the directory heading. Its native modal offers
 ### Full-width boundary word cloud
 
 The lower content boundary uses rectangular glyph-mask packing rather than an elliptical cluster. Perimeter anchors occupy all four corners, while smaller terms fill the intervening space. The canvas scales to the entire content scroll region, with bounded decorative repeats on larger surfaces, complete words, and no glyph collisions. The fixed background and its edge blur remain independent of this decoration.
+
+### 2026-10-21: Three reading themes and support
+
+Light remains white, as explicitly requested. Dark and eye-care adapt the owner's umbrella site palette (zhege712-crypto.github.io/theme.css): dark paper #1a1a19, surface #222221, text #ecece5; eye-care paper #e9f0e1, surface #f4f8ee, text #3a4632. Muted and link colors are adjusted for readable contrast. Existing layout and authored inline colors stay intact. A labelled three-button theme group lives below the navigation tree and on the login page. The selected theme persists locally; an initial visit uses the source site's day/night rule. BlockNote follows the theme. Sidebar content scrolls independently of the theme controls.
+
+Support uses quiet rows in About for the repository, issue feedback and copying the public reading URL, with a sidebar shortcut. No payment destination is inferred. The bottom boundary fades from the reading surface into the image downwards, with blur revealed towards the outer edge; the top uses the mirrored direction. Word-cloud ink follows the selected theme.

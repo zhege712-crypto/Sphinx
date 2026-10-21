@@ -20,6 +20,15 @@
 .contact-value small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 .contact-row > svg { color: var(--muted); }
 .about-page .build-credits { margin-top: 36px; }
+.support-section { margin-top: 40px; padding-top: 28px; border-top: 1px solid var(--line); scroll-margin-top: 24px; }
+.support-section > p { color: var(--muted); font-size: 13px; line-height: 1.8; margin-top: 12px; }
+.support-actions { display: grid; margin-top: 18px; }
+.support-actions > a, .support-actions > button { display: flex; align-items: center; gap: 16px; padding: 18px 0; min-height: 76px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; color: inherit; background: transparent; text-align: left; text-decoration: none; white-space: normal; }
+.support-actions > a:hover, .support-actions > button:hover { color: var(--theme-link, var(--theme-link, #245bdb)); background: transparent; }
+.support-actions span { flex: 1; min-width: 0; }
+.support-actions strong { display: block; font-size: 14px; font-weight: 600; line-height: 1.6; }
+.support-actions small { display: block; margin-top: 4px; line-height: 1.8; }
+.support-section .support-status:empty { display: none; }
 @media (max-width: 600px) {
   .about-section-heading { align-items: flex-start; flex-wrap: wrap; }
   .about-section-heading button { min-height: 44px; }

@@ -2,7 +2,7 @@
 .copy-block-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 6px 12px; border-bottom: 1px solid var(--line); }
 .copy-block-language { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .copy-block-header .copy-code-button { flex-shrink: 0; min-width: 82px; min-height: 32px; padding: 5px 9px; font-size: 12px; background: transparent; border-color: transparent; color: var(--muted); }
-.copy-block-header .copy-code-button:hover { color: var(--blue); background: var(--paper, #fff); border-color: var(--line); }
+.copy-block-header .copy-code-button:hover { color: var(--blue); background: var(--paper, var(--theme-surface, #fff)); border-color: var(--line); }
 .reader-body .copy-block pre { margin: 0; padding: 16px 18px; border-radius: 0; background: transparent; text-align: left; white-space: pre; overflow-x: auto; max-width: 100%; }
 .reader-body .copy-block pre code { font-size: inherit; background: transparent; white-space: pre; font-variant-ligatures: none; }
 .copy-block pre:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }

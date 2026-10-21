@@ -22,6 +22,8 @@ import { ListOrdered, Trash2, Swords } from 'lucide-react';
 import Authors from './Authors';
 import PageBackground from './PageBackground';
 import ScrollBoundary from './ScrollBoundary';
+import ThemeSwitcher from './ThemeSwitcher';
+import { Heart } from 'lucide-react';
 import { hasValhalla, valhallaDocument } from '../shared/valhalla.mjs';
 import { RelatedKnowledge } from './Valhalla';
 const Editor = lazy(() => import('./Editor'));
@@ -52,7 +54,7 @@ function Login({ session, hasBackend, login, toast }) {
     {session.githubConfigured ? <a className="primary button" href="/auth/github" onClick={() => { if (location.hash.startsWith("#/write/") && safeReturn(location.hash)) sessionStorage.setItem('guide-login-target', location.hash); }}>使用 GitHub 登录<ArrowUpRight size={17} /></a> : <div className="notice">{hasBackend ? '正式 GitHub 登录尚未配置。' : '这里是公开阅读站。创作伙伴请使用站主提供的工作台地址。'}</div>}
     {session.localDemo && <div className="local-login"><strong>本地演示</strong><p>仅在本机模拟角色，用于试用编辑与审核。</p><div className="button-row"><button onClick={() => login('owner')}>以站主身份体验</button><button onClick={() => login('editor')}>以伙伴身份体验</button></div></div>}
     <a className="quiet-link" href="#/read"><ArrowLeft size={15} />返回阅读站</a>
-    <SiteNotice />
+    <ThemeSwitcher /><SiteNotice />
   </main>;
 }
 export default function App() {
@@ -222,6 +224,7 @@ export default function App() {
           <Tree docs={[{ id: CONTRIBUTORS_DOCUMENT_ID, title: '参与者与致谢', kind: 'document' }]} current={contributorsPage || (writing && view === 'editor' && current === CONTRIBUTORS_DOCUMENT_ID) ? CONTRIBUTORS_DOCUMENT_ID : null} select={() => writing ? contributorsDraft || isOwner ? editAboutDocument(CONTRIBUTORS_DOCUMENT_ID, contributorsDraft, '/api/contributors/initialize') : navigate('about') : (location.hash = `/read/${CONTRIBUTORS_DOCUMENT_ID}`)} />
         </>}
       </div>
+      <div className="sidebar-utilities"><ThemeSwitcher /><button className="support-nav" onClick={() => run(async () => { await flush(); closeMobileNavigation(); location.hash = writing ? '#/write/about?section=support' : '#/about?section=support'; })}><Heart size={16} />支持我们</button></div>
       {(writing || session.user) && <div className="sidebar-bottom">{writing ? <><div className="user-info"><span className="avatar">{session.user.login.slice(0, 1).toUpperCase()}</span><div><strong>{session.user.login}</strong><small>{isOwner ? '站主' : '创作伙伴'}{session.localDemo ? ' · 本地演示' : ''}</small></div><IconButton label="退出登录" icon={LogOut} onClick={logout} disabled={busy} /></div>{isOwner && <button className="settings-link" onClick={() => navigate('settings')}><Settings2 size={15} />发布与操作记录</button>}</> : <a className="partner-link" href="#/write">返回创作工作台<ArrowUpRight size={17} /></a>}</div>}
     </Sidebar>
     <main className="main-shell">
