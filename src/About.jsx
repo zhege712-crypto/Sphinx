@@ -15,7 +15,7 @@ export default function About({ document, writing, hasDraft, onEdit, contributor
     if (!focusSupport) return;
     const frame = requestAnimationFrame(() => { support.current?.scrollIntoView({ block: 'start' }); support.current?.focus({ preventScroll: true }); });
     return () => cancelAnimationFrame(frame);
-  }, [focusSupport]);
+  }, [focusSupport, document, contributors]);
   return <article className="about-page document-column">
     <div className="document-paper public-paper">
       <h1 className="document-title">关于 Sphinx</h1>
