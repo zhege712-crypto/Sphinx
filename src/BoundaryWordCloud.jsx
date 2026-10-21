@@ -14,7 +14,8 @@ export default function BoundaryWordCloud({ words }) {
       node.width = width * ratio; node.height = height * ratio;
       const context = node.getContext('2d'); if (!context) return;
       context.scale(ratio, ratio);
-      const font = getComputedStyle(node).fontFamily;
+      const style = getComputedStyle(node), font = style.fontFamily;
+      const inks = ['#202c3d', '#3d4b5d', '#5b6879', '#758191'].map((fallback, index) => style.getPropertyValue(`--cloud-ink-${index + 1}`).trim() || fallback);
       const buffer = document.createElement('canvas'), brush = buffer.getContext('2d', { willReadFrequently: true });
       if (!brush) return;
       const compact = width < 520;
@@ -51,14 +52,15 @@ export default function BoundaryWordCloud({ words }) {
       for (const item of placements) {
         context.save(); context.translate((item.x + item.width / 2) * 2, (item.y + item.height / 2) * 2); context.rotate(item.angle);
         context.font = `${item.weight} ${item.size}px ${font}`;
-        context.fillStyle = ['#202c3d', '#3d4b5d', '#5b6879', '#758191'][item.index % 4];
+        context.fillStyle = inks[item.index % 4];
         context.textAlign = 'center'; context.textBaseline = 'middle'; context.fillText(item.word, 0, 0); context.restore();
       }
       node.dataset.wordCount = String(placements.length);
     }
     const resize = new ResizeObserver(() => { cancelAnimationFrame(pending); pending = requestAnimationFrame(paint); });
     resize.observe(node); document.fonts.ready.then(() => { if (!disposed) paint(); });
-    return () => { disposed = true; cancelAnimationFrame(pending); resize.disconnect(); };
+    window.addEventListener('sphinx:theme-change', paint);
+    return () => { disposed = true; cancelAnimationFrame(pending); resize.disconnect(); window.removeEventListener('sphinx:theme-change', paint); };
   }, [words.join('\u0000')]);
   return <canvas ref={canvas} className="boundary-word-canvas" aria-hidden="true" />;
 }

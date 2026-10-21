@@ -5,12 +5,17 @@ html, body { overscroll-behavior-y: none; }
 .boundary-scroller { overscroll-behavior-y: none; translate: 0 var(--boundary-offset, 0px); clip-path: inset(max(0px, calc(-1 * var(--boundary-offset, 0px))) 0 max(0px, var(--boundary-offset, 0px)) 0); transition: translate 280ms cubic-bezier(.16, 1, .3, 1), clip-path 280ms cubic-bezier(.16, 1, .3, 1); }
 .scroll-boundary-scene { position: absolute; left: var(--boundary-left, 0px); top: var(--boundary-top, 0px); width: var(--boundary-width, 100%); height: var(--boundary-height, 100%); z-index: 22; pointer-events: none; overflow: hidden; display: none; }
 [data-has-scroller] > .scroll-boundary-scene { display: block; }
-.scroll-boundary-message, .scroll-boundary-cloud { position: absolute; left: 0; width: 100%; opacity: 0; transition: opacity 180ms ease-out; color: #46536a; }
-.scroll-boundary-message { top: 0; min-height: 112px; padding: 18px 20px 27px; display: grid; align-content: center; justify-items: center; gap: 8px; background: linear-gradient(to bottom, rgb(245 247 250 / 88%) 60%, transparent); }
+.scroll-boundary-message, .scroll-boundary-cloud { position: absolute; left: 0; width: 100%; opacity: 0; transition: opacity 180ms ease-out; color: var(--theme-text, #46536a); }
+.scroll-boundary-message { --boundary-outward: to top; top: 0; min-height: 112px; padding: 18px 20px 27px; display: grid; align-content: center; justify-items: center; gap: 8px; }
 .scroll-boundary-face { font-size: 24px; line-height: 1.2; font-synthesis: style; }
 .scroll-boundary-message p { font-size: 12px; line-height: 1.8; text-align: center; text-wrap: balance; }
-.scroll-boundary-cloud { bottom: 0; height: 176px; overflow: hidden; background: linear-gradient(to top, rgb(245 247 250 / 88%) 65%, transparent); }
-.scroll-boundary-message { mask-image: linear-gradient(#000 70%, transparent); clip-path: inset(0 0 max(0px, calc(112px - var(--boundary-reveal, 0px))) 0); }
+.scroll-boundary-cloud { --boundary-outward: to bottom; bottom: 0; height: 176px; overflow: hidden; }
+/* Keep the reading surface at the content seam; reveal and soften the image outward. */
+.scroll-boundary-scene { --boundary-surface: 245 247 250; --boundary-surface-opacity: 92%; }
+.app-shell[data-page-background] .scroll-boundary-scene { --boundary-surface: 255 255 255; --boundary-surface-opacity: 82%; }
+.scroll-boundary-message, .scroll-boundary-cloud { isolation: isolate; background: linear-gradient(var(--boundary-outward), rgb(var(--boundary-surface) / var(--boundary-surface-opacity)), rgb(var(--boundary-surface) / 48%) 45%, transparent); }
+.scroll-boundary-message::before, .scroll-boundary-cloud::before { content: ''; position: absolute; inset: 0; z-index: -1; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); mask-image: linear-gradient(var(--boundary-outward), transparent, #000); }
+.scroll-boundary-message { clip-path: inset(0 0 max(0px, calc(112px - var(--boundary-reveal, 0px))) 0); }
 .scroll-boundary-cloud { clip-path: inset(max(0px, calc(176px - var(--boundary-reveal, 0px))) 0 0); }
 .boundary-word-canvas { display: block; width: 100%; height: 176px; }
 [data-boundary=top] .scroll-boundary-message, [data-boundary=bottom] .scroll-boundary-cloud { opacity: 1; }

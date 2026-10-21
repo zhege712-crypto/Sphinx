@@ -1,5 +1,5 @@
 .tree-item-actions{position:relative;flex-shrink:0;margin-left:auto}
-.tree-item-actions>.icon-button{width:28px;min-height:30px;padding:3px;color:#687385;opacity:0}
+.tree-item-actions>.icon-button{width:28px;min-height:30px;padding:3px;color:var(--theme-muted, #687385);opacity:0}
 .tree-row:hover .tree-item-actions>.icon-button,.tree-row:focus-within .tree-item-actions>.icon-button,.tree-item-actions:has(:popover-open)>.icon-button{opacity:1}
 .tree-row>.tree-document{min-width:0;flex:1}
 .tree-document-menu{position:fixed;inset:auto;margin:0;width:190px;z-index:20}

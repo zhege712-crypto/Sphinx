@@ -15,6 +15,7 @@ import { pageBackgroundBlock, BackgroundEditorBridge } from './PageBackgroundBlo
 import AuthorPicker from './AuthorPicker';
 import { Code2 } from 'lucide-react';
 import SiteNotice from './SiteNotice';
+import { useTheme } from './ThemeSwitcher';
 import TermLinkDialog from './TermLinkDialog';
 import QuickTermToolbar from './QuickTermLink';
 import { referenceHref } from '../shared/reference-links.mjs';
@@ -38,6 +39,7 @@ const schema = BlockNoteSchema.create({ blockSpecs: { ...supported, image: image
 const Tool = ({ label, icon: Icon, onClick }) => <button type="button" className="icon-button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick}><Icon size={18} /></button>;
 
 export default forwardRef(function Editor({ document: initial, user, onSaved, onStatus, preview, toast, referenceEntries, onReferenceOpen, onBackReference, onBack, backLabel, section }, ref) {
+  const displayTheme = useTheme();
   const valhallaMode = section === 'valhalla';
   const initialValhalla = readValhalla(initial.valhalla);
   const initialBlocks = valhallaMode ? initialValhalla.blocks : initial.blocks;
@@ -169,7 +171,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
           <AuthorPicker ref={authorPickerRef} documentId={initial.id} toast={toast} />
           {!valhallaMode && initial.kind === 'reference' && <ValhallaSync enabled={valhalla.enabled} onChange={enabled => { const next = { ...state.current.valhalla, enabled }; state.current.valhalla = next; setValhalla(next); changed(state.current.title, editor.document); }} />}
           {!valhallaMode && initial.kind === 'reference' && <TagEditor ref={tagEditorRef} tags={tags} entries={referenceEntries} onChange={next => { state.current.tags = next; setTags(next); changed(state.current.title, editor.document); }} onPending={value => { tagDraft.current = value; const unsaved = !!value.trim() || state.current.generation !== state.current.saved; setDirty(unsaved); onStatus(unsaved ? 'dirty' : 'saved'); try { if (unsaved) sessionStorage.setItem(recoveryKey, JSON.stringify({ title: state.current.title, blocks: state.current.blocks, referenceBlocks: state.current.referenceBlocks, valhalla: state.current.valhalla, tags: state.current.tags, tagDraft: value, version: state.current.version })); else sessionStorage.removeItem(recoveryKey); } catch {} }} />}
-          <BlockNoteView editor={editor} theme="light" formattingToolbar={false} onChange={() => changed(state.current.title, editor.document)}>
+          <BlockNoteView editor={editor} theme={displayTheme === 'dark' ? 'dark' : 'light'} formattingToolbar={false} onChange={() => changed(state.current.title, editor.document)}>
             <FormattingToolbarController formattingToolbar={() => <QuickTermToolbar editor={editor} entries={referenceEntries} onOpen={openTermLink} onAssociate={quickAssociate} />} />
           </BlockNoteView>
         </>}
