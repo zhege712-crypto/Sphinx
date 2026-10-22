@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { runtimeIssue } from './check-runtime.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const allowed = new Set(['GITHUB_CLIENT_ID', 'GITHUB_CLIENT_SECRET', 'GITHUB_PUBLISH_TOKEN']);
@@ -21,6 +22,7 @@ export function validateSecrets(value) {
 }
 
 async function writeSecrets(values) {
+  if (runtimeIssue()) throw new Error('runtime');
   const config = JSON.parse(await readFile(path.join(root, 'wrangler.jsonc'), 'utf8'));
   if (config.name !== 'howtoagent-workspace' || config.account_id !== '48720c9632014847eacd7a8bf8a8994b' || config.vars?.GITHUB_REPOSITORY !== 'zhege712-crypto/Sphinx') throw new Error('config');
   await new Promise((resolve, reject) => {
@@ -82,6 +84,8 @@ export function createSetupServer({ port = 8977, configure = writeSecrets } = {}
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const issue = runtimeIssue();
+  if (issue) { console.error(issue); process.exit(1); }
   const setup = createSetupServer();
   await setup.listen();
   console.log('Local secret setup: http://127.0.0.1:8977 (no secrets are logged)');

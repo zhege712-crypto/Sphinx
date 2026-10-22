@@ -5,16 +5,20 @@
   "type": "module",
   "description": "Sphinx：Agent 指南与受邀伙伴创作空间",
   "engines": {
-    "node": ">=24.0.0"
+    "node": "^24.22.1 || ^26.12.1"
   },
   "scripts": {
+    "predev": "node scripts/check-runtime.mjs",
     "dev": "node scripts/dev.mjs",
     "dev:web": "vite --host 127.0.0.1",
     "configure:workspace": "node scripts/configure-workspace.mjs",
+    "preconfigure:workspace": "node scripts/check-runtime.mjs",
     "test": "node --test tests/*.test.mjs",
     "build": "vite build",
+    "prebuild": "node scripts/check-runtime.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "audit:production": "npm audit --omit=dev",
+    "audit:secrets": "node scripts/audit-secrets.mjs --history --dist",
     "check:dependencies": "node scripts/check-dependencies.mjs"
   },
   "dependencies": {

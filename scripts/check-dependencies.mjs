@@ -1,8 +1,10 @@
 import { readFile } from 'node:fs/promises';
+import { runtimeIssue } from './check-runtime.mjs';
 
 const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 const lock = JSON.parse(await readFile(new URL('../package-lock.json', import.meta.url), 'utf8'));
 const issues = [];
+if (runtimeIssue()) issues.push(runtimeIssue());
 const versionAtLeast = (version, minimum) => {
   if (!/^\d+\.\d+\.\d+$/.test(version)) return false;
   const current = version.split('.').map(Number);

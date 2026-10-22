@@ -4,7 +4,7 @@
 
 ## 本地开始
 
-需要 Node.js 24。
+需要 Node.js 24.22.1 或更新的 24.x 安全版本（也支持 26.12.1 或更新的 26.x）。CI 使用 `.node-version` 固定版本；启动、构建和凭据配置前会检查安全下限。
 
 ```powershell
 npm ci --ignore-scripts
@@ -34,6 +34,7 @@ npm run dev
 npm test
 npm run check:dependencies
 npm run build
+npm run audit:secrets
 npm audit
 ```
 
