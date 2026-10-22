@@ -1,0 +1,13 @@
+.reader-visibility-notice{display:flex;align-items:flex-start;gap:10px;padding:14px 0;margin-bottom:22px;border-bottom:1px solid var(--line);color:var(--theme-text,#303744);font-size:13px;line-height:1.7}
+.reader-visibility-notice>svg{margin-top:3px;color:var(--muted)}
+.reader-visibility-notice>div{flex:1;min-width:0}
+.reader-visibility-notice strong{font-weight:600}
+.reader-visibility-notice p{margin-top:3px;color:var(--muted)}
+.reader-visibility-notice button{flex-shrink:0}
+.reader-visibility-dialog{width:min(520px,calc(100vw - 32px));background:var(--theme-surface,#fff)}
+.reader-visibility-dialog p{line-height:1.8}
+.reader-visibility-target{font-weight:600;margin:16px 0 12px;overflow-wrap:anywhere}
+.reader-visibility-detail{font-size:13px;color:var(--muted);margin-top:12px}
+.reader-visibility-error{color:var(--theme-text,#c43c40);margin-top:16px;overflow-wrap:anywhere}
+.tree-reader-hidden{color:var(--muted);margin-right:3px}
+@media(max-width:900px){.reader-visibility-notice{flex-wrap:wrap}.reader-visibility-notice>div{flex-basis:calc(100% - 32px)}.reader-visibility-notice button{margin-left:28px;min-height:44px}.reader-visibility-dialog .dialog-actions{flex-wrap:wrap}.reader-visibility-dialog .dialog-actions button{min-height:44px}}

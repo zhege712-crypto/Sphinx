@@ -13,11 +13,12 @@ import { prepareDirectoryOrder } from './directory-order.mjs';
 import { deletionSelection } from '../shared/document-selection.mjs';
 import { authorsRoute } from './authors.mjs';
 import { readValhalla, safeValhalla } from '../shared/valhalla.mjs';
+import { readerHidden } from '../shared/reader-visibility.mjs';
 
 const uuid = (id) => /^[a-f0-9-]{36}$/.test(id ?? '');
 const parse = JSON.parse;
 const unlocked = "NOT EXISTS(SELECT 1 FROM locks WHERE name='publication' AND expires_at>?) AND NOT EXISTS(SELECT 1 FROM publication_jobs WHERE status IN ('pending','committed'))";
-const meta = (r) => ({ id: r.id, title: r.title, parentId: r.parent_id, kind: r.kind, position: r.position, version: r.version, publishedVersion: r.published_version, publishedAt: r.published_at, updatedAt: r.updated_at, updatedBy: r.updated_by, tags: parse(r.tags || '[]'), text: documentText(parse(r.draft)), valhalla: { enabled: readValhalla(r.valhalla).enabled, text: documentText(readValhalla(r.valhalla).blocks) } });
+const meta = (r) => ({ id: r.id, title: r.title, parentId: r.parent_id, kind: r.kind, position: r.position, version: r.version, publishedVersion: r.published_version, publishedAt: r.published_at, updatedAt: r.updated_at, updatedBy: r.updated_by, readerHidden: readerHidden(r), tags: parse(r.tags || '[]'), text: documentText(parse(r.draft)), valhalla: { enabled: readValhalla(r.valhalla).enabled, text: documentText(readValhalla(r.valhalla).blocks) } });
 const rowFor = async (env, id) => { const r = await env.DB.prepare('SELECT * FROM documents WHERE id=? AND archived=0').bind(id).first(); if (!r) throw new HttpError(404, '文档不存在或已被移除'); return r; };
 export const treeStamp = directoryStamp;
 async function writable(env) {
@@ -119,12 +120,22 @@ async function route(request, env) {
     await recordAudit(env, user.id, 'create', id);
     return json({ document: { ...meta(await rowFor(env, id)), blocks: emptyDocument() } }, 201);
   }
-  const docMatch = /^\/api\/documents\/([a-f0-9-]{36})(?:\/(publish|history|restore|move))?$/.exec(path);
+  const docMatch = /^\/api\/documents\/([a-f0-9-]{36})(?:\/(publish|history|restore|move|visibility))?$/.exec(path);
   if (docMatch) {
     const [, id, action] = docMatch;
     const row = await rowFor(env, id);
     if (!action && request.method === 'GET') return json({ document: { ...meta(row), blocks: parse(row.draft), valhalla: readValhalla(row.valhalla) } });
     if (!action && request.method === 'PUT') return save(env, user, id, await body(request));
+    if (action === 'visibility' && request.method === 'POST') {
+      if (user.role !== 'owner') throw new HttpError(403, '阅读可见性仅站主可调整');
+      const input = await body(request);
+      if (typeof input.hidden !== 'boolean' || typeof input.expectedHidden !== 'boolean') throw new HttpError(400, '请选择明确的隐藏或显示状态');
+      if (input.version !== row.version || input.expectedHidden !== readerHidden(row)) throw new HttpError(409, '文档或阅读可见性已变化，请刷新后重新操作');
+      if (input.hidden === readerHidden(row)) return json({ unchanged: true });
+      const result = await publish(env, user, [{ id, expectedVersion: row.version, expectedHidden: input.expectedHidden, visibility: { hidden: input.hidden } }]);
+      await recordAudit(env, user.id, input.hidden ? 'hide-from-readers' : 'show-to-readers', id);
+      return json(result);
+    }
     if (action === 'history' && request.method === 'GET') return json({ revisions: await queryAll(env, 'SELECT id,title,version,actor,created_at FROM revisions WHERE document_id=? ORDER BY version DESC LIMIT 50', id) });
     if (action === 'restore' && request.method === 'POST') {
       const input = await body(request); const revision = await env.DB.prepare('SELECT * FROM revisions WHERE document_id=? AND id=?').bind(id, input.revisionId).first();

@@ -59,6 +59,16 @@ npx wrangler deploy
 
 ## 5. 上线验收
 
+升级读者可见性功能时，先执行兼容性迁移，再部署新版 Worker：
+
+```powershell
+npx wrangler d1 execute howtoagent-content --remote --file server/migrations/0004-reader-visibility.sql
+npm run build
+npx wrangler deploy
+```
+
+迁移仅给 `documents` 新增默认不隐藏的 `reader_hidden` 字段；旧内容、版本、发布快照与历史保持不变，已执行的迁移不要重复运行。隐藏/恢复采用既有发布作业；网络结果不明确时到“发布与操作记录”恢复状态。上线验收应使用独立本机示例验证隐藏、后台恢复、后代联动和修订草稿隔离，不为测试改变正式作品的可见性。
+
 1. 匿名窗口只能读到已发布快照，无法打开草稿 API 或私有图片。
 2. 受邀伙伴能保存、上传、发布，不能管理成员或批准审核。
 3. 站主可处理删除和批量移动；申请后文档发生变化时拒绝过期批准。

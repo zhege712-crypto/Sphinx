@@ -383,3 +383,10 @@ The lower content boundary uses rectangular glyph-mask packing rather than an el
 Light remains white, as explicitly requested. Dark and eye-care adapt the owner's umbrella site palette (zhege712-crypto.github.io/theme.css): dark paper #1a1a19, surface #222221, text #ecece5; eye-care paper #e9f0e1, surface #f4f8ee, text #3a4632. Muted and link colors are adjusted for readable contrast. Existing layout and authored inline colors stay intact. A labelled three-button theme group lives below the navigation tree and on the login page. The selected theme persists locally; an initial visit uses the source site's day/night rule. BlockNote follows the theme. Sidebar content scrolls independently of the theme controls.
 
 Support uses quiet rows in About for the repository, issue feedback and copying the public reading URL, with a sidebar shortcut. No payment destination is inferred. The bottom boundary fades from the reading surface into the image downwards, with blur revealed towards the outer edge; the top uses the mirrored direction. Word-cloud ink follows the selected theme.
+
+## 2026-10-22：读者界面隐藏与恢复
+
+- 站主在编辑页“更多”、创作目录行菜单和全部文档逐行操作中隐藏或恢复读者显示，沿用既有图标、紧凑按钮与平面文档桌面。隐藏状态保留明确的“读者端隐藏”文字；目录行补充灰色眼睛划线图标，并为辅助技术命名。
+- 编辑与私有预览正文上方显示行内隐藏说明，以细底线分隔，说明后台仍可编辑且发布不会自动恢复显示。站主可直接恢复；因上级目录隐藏时，说明来源并提供“打开上级目录”。手机端操作换行，保留 44px 触控目标。
+- 隐藏与恢复使用原生确认框，显示文档标题、取消及蓝色确认操作，背景显式使用当前主题表面。文案说明正文、草稿和历史保留、子文档继承隐藏，以及恢复上次已发布内容而保留未发布草稿；单独隐藏的子文档继续隐藏，上级仍隐藏时本项仍不公开。构建生效和历史文件、缓存边界一并说明，失败反馈留在框内。
+- 本机桌面与手机截图记录在 `.local/reader-visibility/desktop-dialog.png`、`desktop-hidden.png`、`mobile-dialog.png` 和 `mobile-hidden.png`；这些视口证据不代表实机触控验证。

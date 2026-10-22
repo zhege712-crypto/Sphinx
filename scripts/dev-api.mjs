@@ -12,6 +12,8 @@ for (const table of ['documents', 'revisions']) {
   if (!columns.results.some(column => column.name === 'tags')) DB.exec(`ALTER TABLE ${table} ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'`);
   if (!columns.results.some(column => column.name === 'valhalla')) DB.exec(`ALTER TABLE ${table} ADD COLUMN valhalla TEXT NOT NULL DEFAULT '{"enabled":false,"blocks":[]}'`);
 }
+const documentColumns = await DB.prepare('PRAGMA table_info(documents)').all();
+if (!documentColumns.results.some(column => column.name === 'reader_hidden')) DB.exec('ALTER TABLE documents ADD COLUMN reader_hidden INTEGER NOT NULL DEFAULT 0 CHECK(reader_hidden IN (0,1))');
 const env = { DB, FILES: await fileBucket('.local/assets'), LOCAL_DEMO: true, OWNER_GITHUB_ID: 'local-owner', APP_ORIGIN: 'http://127.0.0.1:5173', SITE_TITLE: 'Sphinx' };
 if (!await DB.prepare('SELECT id FROM documents LIMIT 1').first()) {
   await DB.prepare('INSERT INTO documents(id,title,draft,updated_at,updated_by) VALUES(?,?,?,?,?)').bind(crypto.randomUUID(), '编辑器使用示例', JSON.stringify(sanitizeDocument(demoDocument())), new Date().toISOString(), 'local-owner').run();

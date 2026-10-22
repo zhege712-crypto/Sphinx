@@ -2,12 +2,13 @@ import { collectAssets, publicBlocks, documentText } from '../shared/document.mj
 import { HttpError, now, queryAll, recordAudit } from './auth.mjs';
 import { compareDirectoryEntries, directoryStamp } from '../shared/directory-order.mjs';
 import { readValhalla } from '../shared/valhalla.mjs';
+import { readerCatalogDocuments, readerCatalogAssetIds } from '../shared/reader-visibility.mjs';
 
 const parse = (value) => value ? JSON.parse(value) : null;
 export async function publicCatalog(env) {
-  const rows = await queryAll(env, 'SELECT published FROM documents WHERE archived=0 AND published IS NOT NULL ORDER BY position,title');
+  const rows = await queryAll(env, 'SELECT id,parent_id,reader_hidden,published FROM documents WHERE archived=0 ORDER BY position,title');
   const jobs = await queryAll(env, "SELECT id FROM publication_jobs WHERE status='complete' ORDER BY created_at DESC LIMIT 100");
-  return { schemaVersion: 1, siteTitle: env.SITE_TITLE || 'Sphinx', documents: rows.map((r) => parse(r.published)), publicationIds: jobs.map((j) => j.id) };
+  return { schemaVersion: 1, siteTitle: env.SITE_TITLE || 'Sphinx', documents: readerCatalogDocuments(rows), publicationIds: jobs.map((j) => j.id) };
 }
 async function github(env, path, init = {}) {
   const response = await (env.GITHUB_FETCH || fetch)(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/${path}`, { ...init, signal: AbortSignal.timeout(10000), headers: { Authorization: `Bearer ${env.GITHUB_PUBLISH_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'Sphinx-publisher', 'Content-Type': 'application/json' } });
@@ -67,6 +68,7 @@ async function applyJob(env, job) {
     env.DB.prepare("UPDATE documents SET parent_id=json_extract(item.value,'$.move.parentId'),position=json_extract(item.value,'$.move.position'),version=version+1,updated_at=? FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.move')='object'").bind(now(), job.delta),
     env.DB.prepare("UPDATE documents SET position=json_extract(item.value,'$.reorder.position'),version=version+1 FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.reorder')='object'").bind(job.delta),
     env.DB.prepare("UPDATE documents SET published=json_extract(item.value,'$.snapshot'),published_version=json_extract(item.value,'$.snapshot.version'),published_at=json_extract(item.value,'$.snapshot.publishedAt') FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.snapshot')='object'").bind(job.delta),
+    env.DB.prepare("UPDATE documents SET reader_hidden=CASE WHEN json_extract(item.value,'$.visibility.hidden') THEN 1 ELSE 0 END FROM json_each(?) item WHERE documents.id=json_extract(item.value,'$.id') AND json_type(item.value,'$.visibility')='object'").bind(job.delta),
     env.DB.prepare('UPDATE assets SET public_at=COALESCE(public_at,?) WHERE id IN (SELECT value FROM json_each(?))').bind(now(), job.asset_ids),
   ];
   if (job.review_id) statements.push(env.DB.prepare("UPDATE reviews SET status='approved',resolved_at=? WHERE id=?").bind(now(), job.review_id));
@@ -88,18 +90,21 @@ export async function publish(env, actor, delta, assets = [], reviewId = null, e
       const stamp = directoryStamp(rows);
       if (reviewId ? !review || parse(review.payload).tree !== stamp : expectedTree !== stamp) throw new HttpError(409, '内容或目录已变化，请刷新后重新调整或提交申请');
     }
-    const currentRows = await queryAll(env, 'SELECT id,version,archived FROM documents WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(delta.map((entry) => entry.id)));
+    const currentRows = await queryAll(env, 'SELECT id,version,archived,reader_hidden FROM documents WHERE id IN (SELECT value FROM json_each(?))', JSON.stringify(delta.map((entry) => entry.id)));
     for (const entry of delta) {
       const row = currentRows.find((candidate) => candidate.id === entry.id);
       if (!row || row.archived || row.version !== entry.expectedVersion) throw new HttpError(409, '文档已发生变化，请刷新后重新操作');
+      if (entry.visibility && (row.reader_hidden === 1) !== entry.expectedHidden) throw new HttpError(409, '阅读可见性已变化，请刷新后重新操作');
     }
     const catalog = await publicCatalog(env);
-    for (const entry of delta) {
-      catalog.documents = catalog.documents.filter((doc) => doc.id !== entry.id);
-      if (!entry.remove && entry.snapshot) catalog.documents.push(entry.snapshot);
-    }
+    const rows = await queryAll(env, 'SELECT id,parent_id,reader_hidden,published FROM documents WHERE archived=0');
+    catalog.documents = readerCatalogDocuments(rows, delta);
     catalog.documents.sort(compareDirectoryEntries);
     if (new TextEncoder().encode(JSON.stringify(catalog)).byteLength > 1400000) throw new HttpError(400, '站点内容已超出首版发布容量，请由站主调整发布架构');
+    const visibleAssetIds = readerCatalogAssetIds(catalog.documents);
+    // A hidden publication retains its approved snapshot privately. Upload its
+    // new images only when that snapshot actually returns to the reader catalog.
+    assets = visibleAssetIds.length ? await queryAll(env, 'SELECT * FROM assets WHERE public_at IS NULL AND id IN (SELECT value FROM json_each(?))', JSON.stringify(visibleAssetIds)) : [];
     const id = crypto.randomUUID();
     catalog.publicationIds = [id, ...catalog.publicationIds].slice(0, 100);
     job = { id, delta: JSON.stringify(delta), asset_ids: JSON.stringify(assets.map((a) => a.id)), review_id: reviewId };

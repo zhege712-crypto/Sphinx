@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS documents (
   draft TEXT NOT NULL, tags TEXT NOT NULL DEFAULT '[]', valhalla TEXT NOT NULL DEFAULT '{"enabled":false,"blocks":[]}', version INTEGER NOT NULL DEFAULT 1,
   published TEXT, published_version INTEGER, published_at TEXT,
   updated_at TEXT NOT NULL, updated_by TEXT NOT NULL,
-  archived INTEGER NOT NULL DEFAULT 0
+  archived INTEGER NOT NULL DEFAULT 0,
+  reader_hidden INTEGER NOT NULL DEFAULT 0 CHECK(reader_hidden IN (0,1))
 );
 CREATE INDEX IF NOT EXISTS document_tree ON documents(archived,parent_id,position);
 CREATE TABLE IF NOT EXISTS revisions (

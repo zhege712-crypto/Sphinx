@@ -38,7 +38,7 @@ const linkCard = createReactBlockSpec({ type: 'linkCard', propSchema: { title: {
 const schema = BlockNoteSchema.create({ blockSpecs: { ...supported, image: imageBlock, imageText: imageTextBlock, linkCard, codeDemo: codeDemoBlock, pageBackground: pageBackgroundBlock } });
 const Tool = ({ label, icon: Icon, onClick }) => <button type="button" className="icon-button" title={label} aria-label={label} onMouseDown={(e) => e.preventDefault()} onClick={onClick}><Icon size={18} /></button>;
 
-export default forwardRef(function Editor({ document: initial, user, onSaved, onStatus, preview, toast, referenceEntries, onReferenceOpen, onBackReference, onBack, backLabel, section }, ref) {
+export default forwardRef(function Editor({ document: initial, user, onSaved, onStatus, preview, toast, referenceEntries, onReferenceOpen, onBackReference, onBack, backLabel, section, visibilityNotice }, ref) {
   const displayTheme = useTheme();
   const valhallaMode = section === 'valhalla';
   const initialValhalla = readValhalla(initial.valhalla);
@@ -162,6 +162,7 @@ export default forwardRef(function Editor({ document: initial, user, onSaved, on
       {error && <div className="save-error" role="alert"><strong>草稿尚未保存</strong><p>{error}</p><div className="button-row"><button onClick={() => { state.current.failed = false; setError(''); flush().catch(() => {}); }}><RotateCcw size={15} />重新尝试</button><button onClick={() => downloadJson(`${title || '文档'}-未保存.json`, state.current)}><Download size={15} />下载当前内容</button><button onClick={() => { if (confirm('重新加载会离开当前编辑内容。请先下载副本，确定继续吗？')) { sessionStorage.removeItem(recoveryKey); location.reload(); } }}>加载最新版本</button></div></div>}
       {recovery && <div className="recovery-banner"><p>此浏览器保留了尚未保存的编辑内容。</p>{recovery.version !== initial.version && <p>服务器版本已更新。恢复仅替换当前正文，保留最新名称、标签、同步设置和另一侧正文。</p>}<div className="button-row"><button onClick={() => { const restored = recoverKnowledgeSection(initial, recovery, section); editor.replaceBlocks(editor.document, restored.blocks); state.current.referenceBlocks = restored.referenceBlocks; state.current.valhalla = restored.valhalla; setValhalla(restored.valhalla); setTitle(restored.title); state.current.tags = restored.tags; setTags(restored.tags); tagEditorRef.current?.restore(restored.tagDraft); changed(restored.title, editor.document); setRecovery(null); }}>恢复内容到草稿</button><button onClick={() => downloadJson('未保存的内容.json', recovery)}>下载副本</button><button onClick={() => { sessionStorage.removeItem(recoveryKey); setRecovery(null); }}>丢弃副本</button></div></div>}
       <div className="document-paper">
+        {visibilityNotice}
         <button type="button" className="term-back editor-back" onClick={onBack}><ArrowLeft size={15} />{backLabel}</button>
         <RelatedKnowledge document={{ ...initial, title, valhalla }} writing valhalla={valhallaMode} />
         {preview ? <><div className="preview-label">草稿预览 · 仅受邀伙伴可见</div><h1 className="document-title">{title}</h1><TagList tags={tags} /><Reader blocks={blocks} privatePreview /></> : <>
