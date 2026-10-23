@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import useMediaQuery from './useMediaQuery';
 import { safeLink } from '../shared/document.mjs';
@@ -58,9 +58,31 @@ export function Reader({ blocks, privatePreview = false }) {
 export function Outline({ blocks, editing = false }) {
   const compact = useMediaQuery('(max-width: 1100px)');
   const [expanded, setExpanded] = useState(false);
+  const [active, setActive] = useState(null);
   const summary = useRef();
   const items = headings(blocks);
-  return <aside className="outline" aria-label="本文目录"><details open={!compact || expanded} onToggle={e => { if (compact) setExpanded(e.currentTarget.open); }}><summary ref={summary} tabIndex={compact ? 0 : -1} onClick={e => { if (!compact) e.preventDefault(); }}>本文目录<ChevronDown size={16} /></summary>{items.length ? <nav>{items.map((item, i) => <button key={item.id || i} style={{ paddingLeft: 14 + (item.level - 1) * 12 }} onClick={() => {
+  const headingIds = JSON.stringify(items.map(item => item.id));
+  useEffect(() => {
+    const scroller = summary.current?.closest('.document-layout')?.querySelector('.document-column');
+    if (!scroller) return;
+    let frame;
+    const update = () => {
+      frame = null;
+      const targets = JSON.parse(headingIds).map(id => ({ id, node: editing ? scroller.querySelector(`[data-id="${CSS.escape(id || '')}"]`) : document.getElementById(`block-${id}`) })).filter(item => item.node);
+      const top = scroller.getBoundingClientRect().top + (editing ? (scroller.querySelector('.editor-toolbar')?.offsetHeight || 0) + 24 : 48);
+      const passed = targets.filter(item => item.node.getBoundingClientRect().top <= top);
+      const atEnd = scroller.scrollTop > 0 && scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop < 2;
+      setActive((atEnd ? targets.at(-1) : passed.at(-1) || targets[0])?.id || null);
+    };
+    const schedule = () => { if (frame == null) frame = requestAnimationFrame(update); };
+    const resize = new ResizeObserver(schedule);
+    resize.observe(scroller);
+    scroller.addEventListener('scroll', schedule, { passive: true });
+    scroller.addEventListener('load', schedule, true);
+    schedule();
+    return () => { cancelAnimationFrame(frame); resize.disconnect(); scroller.removeEventListener('scroll', schedule); scroller.removeEventListener('load', schedule, true); };
+  }, [headingIds, editing, compact]);
+  return <aside className="outline" aria-label="本文目录"><details open={!compact || expanded} onToggle={e => { if (compact) setExpanded(e.currentTarget.open); }}><summary ref={summary} tabIndex={compact ? 0 : -1} onClick={e => { if (!compact) e.preventDefault(); }}>本文目录<ChevronDown size={16} /></summary>{items.length ? <nav>{items.map((item, i) => <button key={item.id || i} aria-current={active === item.id ? 'location' : undefined} style={{ paddingLeft: 14 + (item.level - 1) * 12 }} onClick={() => {
     const target = editing ? document.querySelector(`[data-id="${CSS.escape(item.id || '')}"]`) : document.getElementById(`block-${item.id}`);
     if (compact) { setExpanded(false); summary.current?.focus({ preventScroll: true }); }
     // Wait for the disclosure to collapse before calculating the scroll position.

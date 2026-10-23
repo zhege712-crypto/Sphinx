@@ -13,3 +13,20 @@
 .reader-inline[style*="background-color"] code {
   background: transparent;
 }
+
+/* Keep the reading position honest instead of always marking the first heading. */
+.outline nav button:first-child { color: var(--muted); border-left: 1px solid transparent; }
+.outline nav button { border-left: 1px solid transparent; }
+.outline nav button[aria-current="location"] { color: var(--theme-link, #245bdb); border-left-color: var(--blue); }
+.outline nav button:hover { color: var(--theme-link, #245bdb); }
+.reading-home .reader-state { min-height: 0; justify-content: flex-start; align-items: flex-start; text-align: left; gap: 16px; padding: 48px 62px; }
+.reader-state h1 { font-size: 27px; }
+.reader-state p { max-width: 36em; }
+.reader-body [id^="block-"] { scroll-margin-top: 24px; }
+.inline-error > span { min-width: 0; overflow-wrap: anywhere; }
+.inline-error > button { flex-shrink: 0; }
+.main-shell > .inline-error { color: var(--theme-error, #a1373b); background: var(--theme-panel, #fff5f4); gap: 16px; }
+@media (max-width: 900px) {
+  .reading-home .reader-state { padding: 32px 28px; }
+  .inline-error { flex-wrap: wrap; }
+}

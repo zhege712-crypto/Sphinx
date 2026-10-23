@@ -1,5 +1,6 @@
 /* Palette adapted from the owner's umbrella theme.css; Sphinx keeps its document layout. */
 :root[data-theme="dark"] {
+  --theme-error: #f2a7a9;
   --theme-text: #ecece5; --theme-muted: #c4c4be; --theme-surface: #222221;
   --theme-panel: #1a1a19; --theme-hover: #2a2a27; --theme-line: #4a4a45;
   --theme-link: #9dbfe7; --theme-selected: #293b51; --theme-surface-rgb: 34 34 33;
