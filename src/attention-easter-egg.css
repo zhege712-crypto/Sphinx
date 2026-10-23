@@ -1,0 +1,15 @@
+.attention-music { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--line); }
+.attention-music > summary { display: flex; align-items: center; gap: 8px; min-height: 44px; width: fit-content; max-width: 100%; padding: 8px 0; color: var(--muted); cursor: pointer; list-style: none; font-size: 14px; }
+.attention-music > summary::-webkit-details-marker { display: none; }
+.attention-music > summary > svg { flex-shrink: 0; }
+.attention-music > summary:hover { color: var(--blue); }
+.attention-music > summary:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+.attention-music[open] > summary .attention-music-chevron { transform: rotate(90deg); }
+.attention-music-content { padding: 16px 0 8px; }
+.attention-music-title { margin: 0 0 4px; font-size: 18px; line-height: 1.5; }
+.attention-music-artist { display: inline-flex; align-items: center; gap: 5px; font-size: 14px; color: var(--theme-link, #245bdb); text-underline-offset: 3px; }
+.attention-music-note { margin: 16px 0; color: var(--muted); font-size: 14px; line-height: 1.8; }
+.attention-music audio { display: block; width: 100%; max-width: 440px; }
+.attention-music-error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 12px; font-size: 14px; line-height: 1.6; color: var(--theme-error, #a1373b); }
+.attention-music-error button { min-height: 44px; }
+:root[data-theme="dark"] .attention-music audio { color-scheme: dark; }
